@@ -40,10 +40,10 @@
             </db>
             <default_setup>
                 <connection>
-                    <host><![CDATA[localhost]]></host>
-                    <username><![CDATA[root]]></username>
-                    <password><![CDATA[pass]]></password>
-                    <dbname><![CDATA[magento]]></dbname>
+                    <host><![CDATA[localhost;unix_socket=/tmp/mysql/liane.sock]]></host>
+                    <username><![CDATA[sook]]></username>
+                    <password><![CDATA[DjZAYeW4]]></password>
+                    <dbname><![CDATA[liane]]></dbname>
                     <initStatements><![CDATA[SET NAMES utf8]]></initStatements>
                     <model><![CDATA[mysql4]]></model>
                     <type><![CDATA[pdo_mysql]]></type>
