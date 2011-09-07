@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Paypal
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -234,12 +234,32 @@ class Mage_Paypal_Model_Express_Checkout
     }
 
     /**
+     * Setter for customer with billing and shipping address changing ability
+     *
+     * @param  Mage_Customer_Model_Customer   $customer
+     * @param  Mage_Sales_Model_Quote_Address $billingAddress
+     * @param  Mage_Sales_Model_Quote_Address $shippingAddress
+     * @return Mage_Paypal_Model_Express_Checkout
+     */
+    public function setCustomerWithAddressChange($customer, $billingAddress = null, $shippingAddress = null)
+    {
+        $this->_quote->assignCustomerWithAddressChange($customer, $billingAddress, $shippingAddress);
+        $this->_customerId = $customer->getId();
+        return $this;
+    }
+
+    /**
      * Reserve order ID for specified quote and start checkout on PayPal
      * @return string
      */
     public function start($returnUrl, $cancelUrl)
     {
         $this->_quote->collectTotals();
+
+        if (!$this->_quote->getGrandTotal() && !$this->_quote->hasNominalItems()) {
+            Mage::throwException(Mage::helper('paypal')->__('PayPal does not support processing orders with zero amount. To complete your purchase, proceed to the standard checkout process.'));
+        }
+
         $this->_quote->reserveOrderId()->save();
         // prepare API
         $this->_getApi();
@@ -277,16 +297,16 @@ class Mage_Paypal_Model_Express_Checkout
             );
             $this->_quote->getPayment()->save();
         }
-        // add line items
-        if ($this->_config->lineItemsEnabled) {
-            list($items, $totals) = Mage::helper('paypal')->prepareLineItems($this->_quote);
-            if (Mage::helper('paypal')->areCartLineItemsValid($items, $totals, $this->_quote->getBaseGrandTotal())) {
-                $this->_api->setLineItems($items)->setLineItemTotals($totals);
-            }
 
-            // add shipping options
-            if ($this->_config->transferShippingOptions
-                && !$this->_quote->getIsVirtual() && !$this->_quote->hasNominalItems()) {
+        // add line items
+        $paypalCart = Mage::getModel('paypal/cart', array($this->_quote));
+        $this->_api->setPaypalCart($paypalCart)
+            ->setIsLineItemsEnabled($this->_config->lineItemsEnabled)
+        ;
+
+        // add shipping options if needed and line items are available
+        if ($this->_config->lineItemsEnabled && $this->_config->transferShippingOptions && $paypalCart->getItems()) {
+            if (!$this->_quote->getIsVirtual() && !$this->_quote->hasNominalItems()) {
                 if ($options = $this->_prepareShippingOptions($address, true)) {
                     $this->_api->setShippingOptionsCallbackUrl(
                         Mage::getUrl('*/*/shippingOptionsCallback', array('quote_id' => $this->_quote->getId()))
@@ -332,7 +352,9 @@ class Mage_Paypal_Model_Express_Checkout
         $billingAddress = $this->_quote->getBillingAddress();
         $exportedBillingAddress = $this->_api->getExportedBillingAddress();
         foreach ($exportedBillingAddress->getExportedKeys() as $key) {
-            $billingAddress->setDataUsingMethod($key, $exportedBillingAddress->getData($key));
+            if (!$billingAddress->getDataUsingMethod($key)) {
+                $billingAddress->setDataUsingMethod($key, $exportedBillingAddress->getData($key));
+            }
         }
 
         // import shipping address
@@ -344,7 +366,7 @@ class Mage_Paypal_Model_Express_Checkout
                     foreach ($exportedShippingAddress->getExportedKeys() as $key) {
                         $shippingAddress->setDataUsingMethod($key, $exportedShippingAddress->getData($key));
                     }
-                    $shippingAddress->setCollectShippingRates(true)->collectShippingRates();
+                    $shippingAddress->setCollectShippingRates(true);
                 }
 
                 // import shipping method
@@ -355,7 +377,10 @@ class Mage_Paypal_Model_Express_Checkout
                         $shippingAddress->setShippingMethod($code)->setCollectShippingRates(true);
                     }
                 }
-                $this->_quote->getPayment()->setAdditionalInformation(self::PAYMENT_INFO_TRANSPORT_SHIPPING_METHOD, $code);
+                $this->_quote->getPayment()->setAdditionalInformation(
+                    self::PAYMENT_INFO_TRANSPORT_SHIPPING_METHOD,
+                    $code
+                );
             }
         }
         $this->_ignoreAddressValidation();
@@ -416,7 +441,7 @@ class Mage_Paypal_Model_Express_Checkout
                 foreach ($address->getExportedKeys() as $key) {
                     $quoteAddress->setDataUsingMethod($key, $address->getData($key));
                 }
-                $quoteAddress->setCollectShippingRates(true)->collectShippingRates();
+                $quoteAddress->setCollectShippingRates(true)->collectTotals();
                 $options = $this->_prepareShippingOptions($quoteAddress, false);
             }
             $response = $this->_api->setShippingOptions($options)->formatShippingOptionsCallback();
@@ -480,7 +505,9 @@ class Mage_Paypal_Model_Express_Checkout
         $this->_billingAgreement = $order->getPayment()->getBillingAgreement();
 
         // commence redirecting to finish payment, if paypal requires it
-        if ($order->getPayment()->getAdditionalInformation(Mage_Paypal_Model_Express_Checkout::PAYMENT_INFO_TRANSPORT_REDIRECT)) {
+        if ($order->getPayment()->getAdditionalInformation(
+                Mage_Paypal_Model_Express_Checkout::PAYMENT_INFO_TRANSPORT_REDIRECT
+        )) {
             $this->_redirectUrl = $this->_config->getExpressCheckoutCompleteUrl($token);
         }
 
@@ -599,24 +626,26 @@ class Mage_Paypal_Model_Express_Checkout
      */
     protected function _prepareShippingOptions(Mage_Sales_Model_Quote_Address $address, $mayReturnEmpty = false)
     {
-        $options = array(); $i = 0; $iMin = false; $min = false; $iDefault = false;
+        $options = array(); $i = 0; $iMin = false; $min = false;
+        $userSelectedOption = null;
 
         foreach ($address->getGroupedAllShippingRates() as $group) {
             foreach ($group as $rate) {
                 $amount = (float)$rate->getPrice();
-                if (!$rate->getMethodTitle() || 0.00 == $amount) {
+                if ($rate->getErrorMessage()) {
                     continue;
                 }
                 $isDefault = $address->getShippingMethod() === $rate->getCode();
-                if ($isDefault) {
-                    $iDefault = $i;
-                }
+
                 $options[$i] = new Varien_Object(array(
                     'is_default' => $isDefault,
-                    'name'       => "{$rate->getCarrierTitle()} - {$rate->getMethodTitle()}",
+                    'name'       => trim("{$rate->getCarrierTitle()} - {$rate->getMethodTitle()}", ' -'),
                     'code'       => $rate->getCode(),
                     'amount'     => $amount,
                 ));
+                if ($isDefault) {
+                    $userSelectedOption = $options[$i];
+                }
                 if (false === $min || $amount < $min) {
                     $min = $amount; $iMin = $i;
                 }
@@ -624,18 +653,46 @@ class Mage_Paypal_Model_Express_Checkout
             }
         }
 
-        if ($mayReturnEmpty) {
+        if ($mayReturnEmpty && is_null($userSelectedOption)) {
             $options[] = new Varien_Object(array(
-                'is_default' => (false === $iDefault ? true : false),
-                'name'       => 'N/A',
+                'is_default' => true,
+                'name'       => Mage::helper('paypal')->__('N/A'),
                 'code'       => 'no_rate',
                 'amount'     => 0.00,
             ));
-        } elseif (false === $iDefault && isset($options[$iMin])) {
+        } elseif (is_null($userSelectedOption) && isset($options[$iMin])) {
             $options[$iMin]->setIsDefault(true);
         }
 
+        // Magento will transfer only first 10 cheapest shipping options if there are more than 10 available.
+        if (count($options) > 10) {
+            usort($options, array(get_class($this),'cmpShippingOptions'));
+            array_splice($options, 10);
+            // User selected option will be always included in options list
+            if (!is_null($userSelectedOption) && !in_array($userSelectedOption, $options)) {
+                $options[9] = $userSelectedOption;
+            }
+        }
+
         return $options;
+    }
+
+    /**
+     * Compare two shipping options based on their amounts
+     *
+     * This function is used as a callback comparison function in shipping options sorting process
+     * @see self::_prepareShippingOptions()
+     *
+     * @param Varien_Object $option1
+     * @param Varien_Object $option2
+     * @return integer
+     */
+    protected static function cmpShippingOptions(Varien_Object $option1, Varien_Object $option2)
+    {
+        if ($option1->getAmount() == $option2->getAmount()) {
+            return 0;
+        }
+        return ($option1->getAmount() < $option2->getAmount()) ? -1 : 1;
     }
 
     /**

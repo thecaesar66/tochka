@@ -14,18 +14,18 @@
  *
  * @category   Zend
  * @package    Zend_Amf
- * @copyright  Copyright (c) 2005-2009 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
- * @version    $Id: Introspector.php 18951 2009-11-12 16:26:19Z alexander $
+ * @version    $Id: Introspector.php 23316 2010-11-10 16:37:40Z matthew $
  */
 
-/** Zend_Amf_Parse_TypeLoader */
+/** @see Zend_Amf_Parse_TypeLoader */
 #require_once 'Zend/Amf/Parse/TypeLoader.php';
 
-/** Zend_Reflection_Class */
+/** @see Zend_Reflection_Class */
 #require_once 'Zend/Reflection/Class.php';
 
-/** Zend_Server_Reflection */
+/** @see Zend_Server_Reflection */
 #require_once 'Zend/Server/Reflection.php';
 
 /**
@@ -33,7 +33,7 @@
  *
  * @package    Zend_Amf
  * @subpackage Adobe
- * @copyright  Copyright (c) 2005-2009 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
  */
 class Zend_Amf_Adobe_Introspector
@@ -190,6 +190,10 @@ class Zend_Amf_Adobe_Introspector
                     $ptype = $this->_registerType($type);
                     $arg->setAttribute('type', $ptype);
 
+                    if($param->isDefaultValueAvailable()) {
+                        $arg->setAttribute('defaultvalue', $param->getDefaultValue());
+                    }
+
                     $op->appendChild($arg);
                 }
 
@@ -279,7 +283,12 @@ class Zend_Amf_Adobe_Introspector
             return 'Unknown';
         }
 
-        if (in_array($typename, array('int', 'integer', 'bool', 'boolean', 'float', 'string', 'object', 'Unknown', 'stdClass', 'array'))) {
+        // Arrays
+        if ('array' == $typename) {
+            return 'Unknown[]';
+        }
+
+        if (in_array($typename, array('int', 'integer', 'bool', 'boolean', 'float', 'string', 'object', 'Unknown', 'stdClass'))) {
             return $typename;
         }
 

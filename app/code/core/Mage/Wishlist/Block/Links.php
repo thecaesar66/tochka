@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Wishlist
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -32,29 +32,51 @@
  * @package     Mage_Wishlist
  * @author      Magento Core Team <core@magentocommerce.com>
  */
-class Mage_Wishlist_Block_Links extends Mage_Core_Block_Template
+class Mage_Wishlist_Block_Links extends Mage_Page_Block_Template_Links_Block
 {
     /**
-     * Add link on wishlist page in parent block
+     * Position in link list
+     * @var int
+     */
+    protected $_position = 30;
+
+    /**
+     * Set link title, label and url
+     */
+    public function __construct()
+    {
+        parent::__construct();
+        $this->initLinkProperties();
+    }
+
+    /**
+     * Define label, title and url for wishlist link
+     */
+    public function initLinkProperties()
+    {
+        if ($this->helper('wishlist')->isAllow()) {
+            $count = $this->getItemCount() ? $this->getItemCount() : $this->helper('wishlist')->getItemCount();
+            if ($count > 1) {
+                $text = $this->__('My Wishlist (%d items)', $count);
+            } else if ($count == 1) {
+                $text = $this->__('My Wishlist (%d item)', $count);
+            } else {
+                $text = $this->__('My Wishlist');
+            }
+            $this->_label = $text;
+            $this->_title = $text;
+            $this->_url = $this->getUrl('wishlist');
+        }
+    }
+
+    /**
+     * @deprecated after 1.4.2.0
+     * @see Mage_Wishlist_Block_Links::__construct
      *
-     * @return Mage_Wishlist_Block_Links
+     * @return array
      */
     public function addWishlistLink()
     {
-        $parentBlock = $this->getParentBlock();
-        if ($parentBlock && $this->helper('wishlist')->isAllow()) {
-            $count = $this->helper('wishlist')->getItemCount();
-            if ($count > 1) {
-                $text = $this->__('My Wishlist (%d items)', $count);
-            }
-            else if ($count == 1) {
-                $text = $this->__('My Wishlist (%d item)', $count);
-            }
-            else {
-                $text = $this->__('My Wishlist');
-            }
-            $parentBlock->addLink($text, 'wishlist', $text, true, array(), 30, null, 'class="top-link-wishlist"');
-        }
         return $this;
     }
 }

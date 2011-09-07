@@ -151,9 +151,9 @@ final class Mage
     {
         return array(
             'major'     => '1',
-            'minor'     => '4',
-            'revision'  => '1',
-            'patch'     => '1',
+            'minor'     => '6',
+            'revision'  => '0',
+            'patch'     => '0',
             'stability' => '',
             'number'    => '',
         );
@@ -510,15 +510,28 @@ final class Mage
      */
     public static function helper($name)
     {
-        if (strpos($name, '/') === false) {
-            $name .= '/data';
-        }
-
         $registryKey = '_helper/' . $name;
         if (!self::registry($registryKey)) {
             $helperClass = self::getConfig()->getHelperClassName($name);
             self::register($registryKey, new $helperClass);
         }
+        return self::registry($registryKey);
+    }
+
+    /**
+     * Retreive resource helper object
+     *
+     * @param string $moduleName
+     * @return Mage_Core_Model_Resource_Helper_Abstract
+     */
+    public static function getResourceHelper($moduleName)
+    {
+        $registryKey = '_resource_helper/' . $moduleName;
+        if (!self::registry($registryKey)) {
+            $helperClass = self::getConfig()->getResourceHelper($moduleName);
+            self::register($registryKey, $helperClass);
+        }
+
         return self::registry($registryKey);
     }
 
@@ -532,7 +545,7 @@ final class Mage
      */
     public static function exception($module = 'Mage_Core', $message = '', $code = 0)
     {
-        $className = $module.'_Exception';
+        $className = $module . '_Exception';
         return new $className($message, $code);
     }
 
@@ -564,7 +577,7 @@ final class Mage
             self::$_app = new Mage_Core_Model_App();
             self::setRoot();
             self::$_events = new Varien_Event_Collection();
-            self::$_config = new Mage_Core_Model_Config();
+            self::$_config = new Mage_Core_Model_Config($options);
 
             Varien_Profiler::start('self::app::init');
             self::$_app->init($code, $type, $options);
@@ -575,20 +588,51 @@ final class Mage
     }
 
     /**
+     * @static
+     * @param string $code
+     * @param string $type
+     * @param array $options
+     * @param string|array $modules
+     */
+    public static function init($code = '', $type = 'store', $options = array(), $modules = array())
+    {
+        try {
+            self::setRoot();
+            self::$_app     = new Mage_Core_Model_App();
+            self::$_config  = new Mage_Core_Model_Config();
+
+            if (!empty($modules)) {
+                self::$_app->initSpecified($code, $type, $options, $modules);
+            } else {
+                self::$_app->init($code, $type, $options);
+            }
+        } catch (Mage_Core_Model_Session_Exception $e) {
+            header('Location: ' . self::getBaseUrl());
+            die;
+        } catch (Mage_Core_Model_Store_Exception $e) {
+            require_once(self::getBaseDir() . DS . 'errors' . DS . '404.php');
+            die;
+        } catch (Exception $e) {
+            self::printException($e);
+            die;
+        }
+    }
+
+    /**
      * Front end main entry point
      *
      * @param string $code
      * @param string $type
      * @param string|array $options
      */
-    public static function run($code = '', $type = 'store', $options=array())
+    public static function run($code = '', $type = 'store', $options = array())
     {
         try {
             Varien_Profiler::start('mage');
             self::setRoot();
-            self::$_app = new Mage_Core_Model_App();
+            self::$_app    = new Mage_Core_Model_App();
             self::$_events = new Varien_Event_Collection();
-            self::$_config = new Mage_Core_Model_Config();
+            self::$_config = new Mage_Core_Model_Config($options);
             self::$_app->run(array(
                 'scope_code' => $code,
                 'scope_type' => $type,
@@ -633,11 +677,11 @@ final class Mage
             if (is_string($options)) {
                 $options = array('etc_dir' => $options);
             }
-            $etcDir = 'etc';
+            $etcDir = self::getRoot() . DS . 'etc';
             if (!empty($options['etc_dir'])) {
                 $etcDir = $options['etc_dir'];
             }
-            $localConfigFile = self::getRoot() . DS . $etcDir . DS . 'local.xml';
+            $localConfigFile = $etcDir . DS . 'local.xml';
 
             self::$_isInstalled = false;
 
@@ -687,10 +731,12 @@ final class Mage
 
         try {
             if (!isset($loggers[$file])) {
-                $logFile = self::getBaseDir('var') . DS . 'log' . DS . $file;
+                $logDir  = self::getBaseDir('var') . DS . 'log';
+                $logFile = $logDir . DS . $file;
 
-                if (!is_dir(self::getBaseDir('var').DS.'log')) {
-                    mkdir(self::getBaseDir('var').DS.'log', 0777);
+                if (!is_dir($logDir)) {
+                    mkdir($logDir);
+                    chmod($logDir, 0777);
                 }
 
                 if (!file_exists($logFile)) {

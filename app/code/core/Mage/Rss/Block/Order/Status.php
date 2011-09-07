@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Rss
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -63,7 +63,8 @@ class Mage_Rss_Block_Order_Status extends Mage_Core_Block_Template
                 if($type && $type!='order'){
                    $urlAppend = $type;
                 }
-                $title = Mage::helper('rss')->__('Details for %s #%s', ucwords($type), $result['increment_id']);
+                $type  = Mage::helper('rss')->__(ucwords($type));
+                $title = Mage::helper('rss')->__('Details for %s #%s', $type, $result['increment_id']);
 
                 $description = '<p>'.
                 Mage::helper('rss')->__('Notified Date: %s<br/>',$this->formatDate($result['created_at'])).

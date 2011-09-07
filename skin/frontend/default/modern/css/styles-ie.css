@@ -19,7 +19,7 @@
  *
  * @category    design
  * @package     default_modern
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
 
@@ -36,6 +36,7 @@
 * html .block button.button span,
 * html .product-view .box-tags .form-add button.button span,
 * html .footer .form-subscribe button.button span { background-image:url(../images/bkg_btn-small.gif); }
+* html .window-overlay { background:#ccc; filter:alpha(opacity=50); }
 
 /* Doubled Margin Fixes */
 .product-view .product-img-box .more-views li,
@@ -67,7 +68,7 @@ button.btn-checkout { height:28px; }
 .cart .discount .buttons-set button.button,
 .cart .shipping .buttons-set button.button { height:19px; }
 
-table { face-color:expression(runtimeStyle.scrollbarFaceColor = '#fff', cellSpacing = 0); }
+table { scrollbar-face-color:expression(runtimeStyle.scrollbarFaceColor = '#fff', cellSpacing = 0); }
 
 .product-view .product-img-box .zoom.disabled { filter:alpha(opacity=30); }
 
@@ -129,7 +130,10 @@ table { face-color:expression(runtimeStyle.scrollbarFaceColor = '#fff', cellSpac
 .product-tabs,
 .product-view .product-img-box .more-views ul,
 .product-view .box-tags .form-add,
+.product-view .product-shop .short-description,
+.product-view .box-description,
 .product-options .options-list li,
+.product-options,
 .product-options-bottom,
 .truncated,
 .truncated .truncated_full_value,

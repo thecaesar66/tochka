@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Adminhtml
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -44,11 +44,11 @@ class Mage_Adminhtml_Block_Widget_Grid_Column_Renderer_Action extends Mage_Admin
     {
         $actions = $this->getColumn()->getActions();
         if ( empty($actions) || !is_array($actions) ) {
-            return '&nbsp';
+            return '&nbsp;';
         }
 
         if(sizeof($actions)==1 && !$this->getColumn()->getNoLink()) {
-            foreach ($actions as $action){
+            foreach ($actions as $action) {
                 if ( is_array($action) ) {
                     return $this->_toLinkHtml($action, $row);
                 }

@@ -15,8 +15,8 @@
  * @category   Zend
  * @package    Zend_Controller
  * @subpackage Router
- * @copyright  Copyright (c) 2005-2009 Zend Technologies USA Inc. (http://www.zend.com)
- * @version    $Id: Rewrite.php 18951 2009-11-12 16:26:19Z alexander $
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
+ * @version    $Id: Rewrite.php 23362 2010-11-18 17:22:41Z bittarman $
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
  */
 
@@ -31,7 +31,7 @@
  *
  * @package    Zend_Controller
  * @subpackage Router
- * @copyright  Copyright (c) 2005-2009 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
  * @see        http://manuals.rubyonrails.com/read/chapter/65
  */
@@ -74,6 +74,14 @@ class Zend_Controller_Router_Rewrite extends Zend_Controller_Router_Abstract
     protected $_chainNameSeparator = '-';
 
     /**
+     * Determines if request parameters should be used as global parameters
+     * inside this router.
+     *
+     * @var boolean
+     */
+    protected $_useCurrentParamsAsGlobal = false;
+
+    /**
      * Add default routes which are used to mimic basic router behaviour
      *
      * @return Zend_Controller_Router_Rewrite
@@ -87,7 +95,7 @@ class Zend_Controller_Router_Rewrite extends Zend_Controller_Router_Abstract
             #require_once 'Zend/Controller/Router/Route/Module.php';
             $compat = new Zend_Controller_Router_Route_Module(array(), $dispatcher, $request);
 
-            $this->_routes = array_merge(array('default' => $compat), $this->_routes);
+            $this->_routes = array('default' => $compat) + $this->_routes;
         }
 
         return $this;
@@ -372,7 +380,9 @@ class Zend_Controller_Router_Rewrite extends Zend_Controller_Router_Abstract
         }
 
         // Find the matching route
-        foreach (array_reverse($this->_routes) as $name => $route) {
+        $routeMatched = false;
+        
+        foreach (array_reverse($this->_routes, true) as $name => $route) {
             // TODO: Should be an interface method. Hack for 1.0 BC
             if (method_exists($route, 'isAbstract') && $route->isAbstract()) {
                 continue;
@@ -388,7 +398,20 @@ class Zend_Controller_Router_Rewrite extends Zend_Controller_Router_Abstract
             if ($params = $route->match($match)) {
                 $this->_setRequestParams($request, $params);
                 $this->_currentRoute = $name;
+                $routeMatched        = true;
                 break;
+            }
+        }
+
+         if (!$routeMatched) {
+             #require_once 'Zend/Controller/Router/Exception.php';
+             throw new Zend_Controller_Router_Exception('No route matched the request', 404);
+         }
+
+        if($this->_useCurrentParamsAsGlobal) {
+            $params = $request->getParams();
+            foreach($params as $param => $value) {
+                $this->setGlobalParam($param, $value);
             }
         }
 
@@ -435,7 +458,8 @@ class Zend_Controller_Router_Rewrite extends Zend_Controller_Router_Abstract
             }
         }
 
-        $params = array_merge($this->_globalParams, $userParams);
+        // Use UNION (+) in order to preserve numeric keys 
+        $params = $userParams + $this->_globalParams;
 
         $route = $this->getRoute($name);
         $url   = $route->assemble($params, $reset, $encode);
@@ -464,7 +488,7 @@ class Zend_Controller_Router_Rewrite extends Zend_Controller_Router_Abstract
     /**
      * Set the separator to use with chain names
      *
-     * @param  string $separator The separator to use
+     * @param string $separator The separator to use
      * @return Zend_Controller_Router_Rewrite
      */
     public function setChainNameSeparator($separator) {
@@ -480,5 +504,26 @@ class Zend_Controller_Router_Rewrite extends Zend_Controller_Router_Abstract
      */
     public function getChainNameSeparator() {
         return $this->_chainNameSeparator;
+    }
+
+    /**
+     * Determines/returns whether to use the request parameters as global parameters.
+     *
+     * @param boolean|null $use
+     *           Null/unset when you want to retrieve the current state.
+     *           True when request parameters should be global, false otherwise
+     * @return boolean|Zend_Controller_Router_Rewrite
+     *              Returns a boolean if first param isn't set, returns an
+     *              instance of Zend_Controller_Router_Rewrite otherwise.
+     *
+     */
+    public function useRequestParametersAsGlobal($use = null) {
+        if($use === null) {
+            return $this->_useCurrentParamsAsGlobal;
+        }
+
+        $this->_useCurrentParamsAsGlobal = (bool) $use;
+
+        return $this;
     }
 }

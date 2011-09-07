@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Sales
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -51,6 +51,47 @@ class Mage_Sales_Model_Order_Pdf_Total_Default extends Varien_Object
             'font_size' => $fontSize
         );
         return array($total);
+    }
+
+    /**
+     * Get array of arrays with tax information for display in PDF
+     * array(
+     *  $index => array(
+     *      'amount'   => $amount,
+     *      'label'    => $label,
+     *      'font_size'=> $font_size
+     *  )
+     * )
+     * @return array
+     */
+    public function getFullTaxInfo()
+    {
+       $rates     = Mage::getResourceModel('sales/order_tax_collection')->loadByOrder($this->getOrder())->toArray();
+       $fullInfo  = Mage::getSingleton('tax/calculation')->reproduceProcess($rates['items']);
+       $fontSize = $this->getFontSize() ? $this->getFontSize() : 7;
+       $tax_info  = array();
+
+       if ($fullInfo) {
+          foreach ($fullInfo as $info) {
+             if (isset($info['hidden']) && $info['hidden']) {
+                continue;
+             }
+
+             $_amount   = $info['amount'];
+
+             foreach ($info['rates'] as $rate) {
+                $percent = $rate['percent'] ? ' (' . $rate['percent']. '%)' : '';
+
+                $tax_info[] = array(
+                   'amount' => $this->getAmountPrefix().$this->getOrder()->formatPriceTxt($_amount),
+                   'label'  => Mage::helper('tax')->__($rate['title']) . $percent . ':',
+                   'font_size' => $fontSize
+                );
+             }
+          }
+       }
+
+       return $tax_info;
     }
 
     /**

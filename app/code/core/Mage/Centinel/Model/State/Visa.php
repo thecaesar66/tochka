@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Centinel
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -29,23 +29,6 @@
  */
 class Mage_Centinel_Model_State_Visa extends Mage_Centinel_Model_StateAbstract
 {
-    /**
-     * Analyse lookup`s results. If lookup is successful return true and false if it failure
-     * Result depends from flag self::getIsModeStrict()
-     *
-     * @return bool
-     */
-    public function isLookupSuccessful()
-    {
-        if ($this->_isLookupStrictSuccessful()) {
-            return true;
-        } elseif (!$this->getIsModeStrict() && $this->_isLookupSoftSuccessful()) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
     /**
      * Analyse lookup`s results. If it has require params for authenticate, return true
      *
@@ -74,7 +57,7 @@ class Mage_Centinel_Model_State_Visa extends Mage_Centinel_Model_StateAbstract
         //Test cases 1-5, 11
         if ($this->_isLookupStrictSuccessful()) {
 
-            if ($paResStatus == 'Y' && $eciFlag == '05' && $xid != '' && $cavv != '' && $errorNo == '') {
+            if ($paResStatus == 'Y' && $eciFlag == '05' && $xid != '' && $cavv != '' && $errorNo == '0') {
                 //Test case 1
                 if ($signatureVerification == 'Y') {
                     return true;
@@ -87,13 +70,13 @@ class Mage_Centinel_Model_State_Visa extends Mage_Centinel_Model_StateAbstract
 
             //Test case 3
             if ($paResStatus == 'N' && $signatureVerification == 'Y' && $eciFlag == '07' &&
-                $xid != '' && $cavv == '' && $errorNo == '') {
+                $xid != '' && $cavv == '' && $errorNo == '0') {
                 return false;
             }
 
             //Test case 4
             if ($paResStatus == 'A' && $signatureVerification == 'Y' && $eciFlag == '06' &&
-                $xid != '' && $cavv != '' && $errorNo == '') {
+                $xid != '' && $cavv != '' && $errorNo == '0') {
                 if ($this->getIsModeStrict()) {
                     return false;
                 } else {
@@ -103,7 +86,7 @@ class Mage_Centinel_Model_State_Visa extends Mage_Centinel_Model_StateAbstract
 
             //Test case 5
             if ($paResStatus == 'U' && $signatureVerification == 'Y' && $eciFlag == '07' &&
-                $xid != '' && $cavv == '' && $errorNo == '') {
+                $xid != '' && $cavv == '' && $errorNo == '0') {
                 if ($this->getIsModeStrict()) {
                     return false;
                 } else {
@@ -126,7 +109,10 @@ class Mage_Centinel_Model_State_Visa extends Mage_Centinel_Model_StateAbstract
         //Test cases 6-10
         if (!$this->getIsModeStrict() && $this->_isLookupSoftSuccessful()) {
             if ($paResStatus == '' && $signatureVerification == '' && $eciFlag == '' &&
-                $xid == '' && $cavv == '' && $errorNo == '') {
+                $xid == '' && $cavv == '' && $errorNo == '0') {
+                return true;
+            } elseif ($paResStatus == false && $signatureVerification == false && $eciFlag == false &&
+                $xid == false && $cavv == false && $errorNo == false) {
                 return true;
             }
         }
@@ -139,13 +125,13 @@ class Mage_Centinel_Model_State_Visa extends Mage_Centinel_Model_StateAbstract
      *
      * @return bool
      */
-    private function _isLookupStrictSuccessful()
+    protected function _isLookupStrictSuccessful()
     {
         //Test cases 1-5, 11
         if ($this->getLookupEnrolled() == 'Y' &&
             $this->getLookupAcsUrl() != '' &&
             $this->getLookupPayload() != '' &&
-            $this->getLookupErrorNo() == '') {
+            $this->getLookupErrorNo() == '0') {
             return true;
         }
         return false;
@@ -156,7 +142,7 @@ class Mage_Centinel_Model_State_Visa extends Mage_Centinel_Model_StateAbstract
      *
      * @return bool
      */
-    private function _isLookupSoftSuccessful()
+    protected function _isLookupSoftSuccessful()
     {
         $acsUrl = $this->getLookupAcsUrl();
         $payload = $this->getLookupPayload();
@@ -164,7 +150,7 @@ class Mage_Centinel_Model_State_Visa extends Mage_Centinel_Model_StateAbstract
         $enrolled = $this->getLookupEnrolled();
 
         //Test cases 7,8
-        if ($acsUrl == '' && $payload == '' && $errorNo == '' && ($enrolled == 'N' || $enrolled == 'U')) {
+        if ($acsUrl == '' && $payload == '' && $errorNo == '0' && ($enrolled == 'N' || $enrolled == 'U')) {
             return true;
         }
 
@@ -180,5 +166,4 @@ class Mage_Centinel_Model_State_Visa extends Mage_Centinel_Model_StateAbstract
 
         return false;
     }
-
 }

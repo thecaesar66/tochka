@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Paypal
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -50,6 +50,7 @@ class Mage_Paypal_Model_Method_Agreement extends Mage_Sales_Model_Payment_Method
     protected $_canRefundInvoicePartial = true;
     protected $_canVoid                 = true;
     protected $_canUseCheckout          = false;
+    protected $_canUseInternal          = false;
     protected $_canFetchTransactionInfo = true;
     protected $_canReviewPayment        = true;
 
@@ -294,22 +295,19 @@ class Mage_Paypal_Model_Method_Agreement extends Mage_Sales_Model_Payment_Method
     {
         $order = $payment->getOrder();
         $billingAgreement = Mage::getModel('sales/billing_agreement')->load(
-            $payment->getAdditionalInformation(Mage_Sales_Model_Payment_Method_Billing_AgreementAbstract::TRANSPORT_BILLING_AGREEMENT_ID)
+            $payment->getAdditionalInformation(
+                Mage_Sales_Model_Payment_Method_Billing_AgreementAbstract::TRANSPORT_BILLING_AGREEMENT_ID
+            )
         );
 
         $api = $this->_pro->getApi()
             ->setReferenceId($billingAgreement->getReferenceId())
             ->setPaymentAction($this->_pro->getConfig()->paymentAction)
             ->setAmount($amount)
-            ->setNotifyUrl(Mage::getUrl('paypal/ipn/'));
-
-        // add line items
-        if ($this->_pro->getConfig()->lineItemsEnabled) {
-            list($items, $totals) = Mage::helper('paypal')->prepareLineItems($order);
-            if (Mage::helper('paypal')->areCartLineItemsValid($items, $totals, $amount)) {
-                $api->setLineItems($items)->setLineItemTotals($totals);
-            }
-        }
+            ->setNotifyUrl(Mage::getUrl('paypal/ipn/'))
+            ->setPaypalCart(Mage::getModel('paypal/cart', array($order)))
+            ->setIsLineItemsEnabled($this->_pro->getConfig()->lineItemsEnabled)
+        ;
 
         // call api and import transaction and other payment information
         $api->callDoReferenceTransaction();
@@ -322,7 +320,8 @@ class Mage_Paypal_Model_Method_Agreement extends Mage_Sales_Model_Payment_Method
 
         if ($api->getBillingAgreementId()) {
             $order->addRelatedObject($billingAgreement);
-            $billingAgreement->addOrderRelation($order->getId());
+            $billingAgreement->setIsObjectChanged(true);
+            $billingAgreement->addOrderRelation($order);
         }
 
         return $this;

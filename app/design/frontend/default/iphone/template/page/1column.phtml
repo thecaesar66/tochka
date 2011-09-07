@@ -20,7 +20,7 @@
  *
  * @category    design
  * @package     default_iphone
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
 ?>
@@ -42,10 +42,7 @@
 </div>
 <div class="middle-container">
     <div class="middle col-1-layout">
-        <div style="margin-bottom:7px;">
-            <?php echo $this->getChildHtml('breadcrumbs') ?>
-            <div class="clear"></div>
-        </div>
+        <?php echo $this->getChildHtml('breadcrumbs') ?>
         <div class="clear"></div>
         <div id="main" class="col-main">
             <?php echo $this->getChildHtml('content') ?>

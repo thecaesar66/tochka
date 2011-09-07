@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Payment
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -90,12 +90,14 @@ class Mage_Payment_Block_Info_Cc extends Mage_Payment_Block_Info
         if ($this->getInfo()->getCcLast4()) {
             $data[Mage::helper('payment')->__('Credit Card Number')] = sprintf('xxxx-%s', $this->getInfo()->getCcLast4());
         }
-        if ($ccSsIssue = $this->getInfo()->getCcSsIssue()) {
-            $data[Mage::helper('payment')->__('Switch/Solo Issue Number')] = $ccSsIssue;
-        }
         if (!$this->getIsSecureMode()) {
-            if ($year = $this->getInfo()->getCcSsStartYear() && $month = $this->getInfo()->getCcStartMonth()) {
-                $data[Mage::helper('payment')->__('Switch/Solo Start Date')] =  $this->_formatCardDate($year, $month);
+            if ($ccSsIssue = $this->getInfo()->getCcSsIssue()) {
+                $data[Mage::helper('payment')->__('Switch/Solo/Maestro Issue Number')] = $ccSsIssue;
+            }
+            $year = $this->getInfo()->getCcSsStartYear();
+            $month = $this->getInfo()->getCcSsStartMonth();
+            if ($year && $month) {
+                $data[Mage::helper('payment')->__('Switch/Solo/Maestro Start Date')] =  $this->_formatCardDate($year, $month);
             }
         }
         return $transport->setData(array_merge($data, $transport->getData()));

@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Adminhtml
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -73,7 +73,7 @@ class Mage_Adminhtml_Block_Report_Product_Sold_Grid extends Mage_Adminhtml_Block
     {
         $this->addColumn('name', array(
             'header'    =>Mage::helper('reports')->__('Product Name'),
-            'index'     =>'name'
+            'index'     =>'order_items_name'
         ));
 
         $this->addColumn('ordered_qty', array(
@@ -86,7 +86,7 @@ class Mage_Adminhtml_Block_Report_Product_Sold_Grid extends Mage_Adminhtml_Block
         ));
 
         $this->addExportType('*/*/exportSoldCsv', Mage::helper('reports')->__('CSV'));
-        $this->addExportType('*/*/exportSoldExcel', Mage::helper('reports')->__('Excel'));
+        $this->addExportType('*/*/exportSoldExcel', Mage::helper('reports')->__('Excel XML'));
 
         return parent::_prepareColumns();
     }

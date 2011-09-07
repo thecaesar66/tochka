@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Api
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -94,10 +94,14 @@ class Mage_Api_Model_Server_Adapter_Xmlrpc
      */
     public function run()
     {
+        $apiConfigCharset = Mage::getStoreConfig("api/config/charset");
+        
         $this->_xmlRpc = new Zend_XmlRpc_Server();
-        $this->_xmlRpc->setClass($this->getHandler());
+        $this->_xmlRpc->setEncoding($apiConfigCharset)
+            ->setClass($this->getHandler());
         $this->getController()->getResponse()
-            ->setHeader('Content-Type', 'text/xml')
+            ->clearHeaders()
+            ->setHeader('Content-Type','text/xml; charset='.$apiConfigCharset)
             ->setBody($this->_xmlRpc->handle());
         return $this;
     }

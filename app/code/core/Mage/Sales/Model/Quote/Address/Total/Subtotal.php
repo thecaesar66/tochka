@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Sales
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -85,12 +85,10 @@ class Mage_Sales_Model_Quote_Address_Total_Subtotal extends Mage_Sales_Model_Quo
             $quoteItem = $item;
         }
         $product = $quoteItem->getProduct();
-        if (!$product->hasCustomerGroupId()) {
-            $product->setCustomerGroupId($quoteItem->getQuote()->getCustomerGroupId());
-        }
+        $product->setCustomerGroupId($quoteItem->getQuote()->getCustomerGroupId());
 
         /**
-         * Quote super mode flag meen whot we work with quote without restriction
+         * Quote super mode flag mean what we work with quote without restriction
          */
         if ($item->getQuote()->getIsSuperMode()) {
             if (!$product) {
@@ -110,11 +108,13 @@ class Mage_Sales_Model_Quote_Address_Total_Subtotal extends Mage_Sales_Model_Quo
                $quoteItem->getProduct(),
                $quoteItem->getQty()
             );
-            $item->setPrice($finalPrice);
+            $item->setPrice($finalPrice)
+                ->setBaseOriginalPrice($finalPrice);
             $item->calcRowTotal();
         } else if (!$quoteItem->getParentItem()) {
             $finalPrice = $product->getFinalPrice($quoteItem->getQty());
-            $item->setPrice($finalPrice);
+            $item->setPrice($finalPrice)
+                ->setBaseOriginalPrice($finalPrice);
             $item->calcRowTotal();
             $this->_addAmount($item->getRowTotal());
             $this->_addBaseAmount($item->getBaseRowTotal());

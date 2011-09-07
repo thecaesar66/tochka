@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Adminhtml
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -44,7 +44,10 @@ class Mage_Adminhtml_Block_Catalog_Product_Edit_Tab_Related extends Mage_Adminht
         $this->setDefaultSort('entity_id');
         $this->setUseAjax(true);
         if ($this->_getProduct()->getId()) {
-            $this->setDefaultFilter(array('in_products'=>1));
+            $this->setDefaultFilter(array('in_products' => 1));
+        }
+        if ($this->isReadonly()) {
+            $this->setFilterVisibility(false);
         }
     }
 
@@ -73,10 +76,10 @@ class Mage_Adminhtml_Block_Catalog_Product_Edit_Tab_Related extends Mage_Adminht
                 $productIds = 0;
             }
             if ($column->getFilter()->getValue()) {
-                $this->getCollection()->addFieldToFilter('entity_id', array('in'=>$productIds));
+                $this->getCollection()->addFieldToFilter('entity_id', array('in' => $productIds));
             } else {
                 if($productIds) {
-                    $this->getCollection()->addFieldToFilter('entity_id', array('nin'=>$productIds));
+                    $this->getCollection()->addFieldToFilter('entity_id', array('nin' => $productIds));
                 }
             }
         } else {
@@ -102,7 +105,7 @@ class Mage_Adminhtml_Block_Catalog_Product_Edit_Tab_Related extends Mage_Adminht
             if (empty($productIds)) {
                 $productIds = array(0);
             }
-            $collection->addFieldToFilter('entity_id', array('in'=>$productIds));
+            $collection->addFieldToFilter('entity_id', array('in' => $productIds));
         }
 
         $this->setCollection($collection);
@@ -143,6 +146,7 @@ class Mage_Adminhtml_Block_Catalog_Product_Edit_Tab_Related extends Mage_Adminht
             'width'     => 60,
             'index'     => 'entity_id'
         ));
+
         $this->addColumn('name', array(
             'header'    => Mage::helper('catalog')->__('Name'),
             'index'     => 'name'
@@ -205,7 +209,7 @@ class Mage_Adminhtml_Block_Catalog_Product_Edit_Tab_Related extends Mage_Adminht
             'validate_class'    => 'validate-number',
             'index'             => 'position',
             'width'             => 60,
-            'editable'          => !$this->isReadonly(),
+            'editable'          => !$this->_getProduct()->getRelatedReadonly(),
             'edit_only'         => !$this->_getProduct()->getId()
         ));
 
@@ -221,7 +225,7 @@ class Mage_Adminhtml_Block_Catalog_Product_Edit_Tab_Related extends Mage_Adminht
     {
         return $this->getData('grid_url')
             ? $this->getData('grid_url')
-            : $this->getUrl('*/*/relatedGrid', array('_current'=>true));
+            : $this->getUrl('*/*/relatedGrid', array('_current' => true));
     }
 
     /**

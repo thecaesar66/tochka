@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Adminhtml
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -212,7 +212,7 @@ class Mage_Adminhtml_Block_Media_Uploader extends Mage_Adminhtml_Block_Widget
         if (empty($url) || !$design->validateFile($url, array('_type' => 'skin', '_theme' => $theme))) {
             $theme = $design->getDefaultTheme();
         }
-        return Mage::getBaseUrl(Mage_Core_Model_Store::URL_TYPE_WEB) . 'skin/' .
+        return Mage::getBaseUrl(Mage_Core_Model_Store::URL_TYPE_SKIN) .
             $design->getArea() . '/' . $design->getPackageName() . '/' . $theme . '/' . $url;
     }
 }

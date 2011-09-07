@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Adminhtml
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -91,17 +91,16 @@ class Mage_Adminhtml_Block_Notification_Window extends Mage_Adminhtml_Block_Noti
      */
     public function canShow()
     {
+        if (!is_null($this->_available)) {
+            return $this->_available;
+        }
+
         if (!Mage::getSingleton('admin/session')->isFirstPageAfterLogin()) {
             $this->_available = false;
             return false;
         }
 
         if (!$this->isOutputEnabled('Mage_AdminNotification')) {
-            $this->_available = false;
-            return false;
-        }
-
-        if (!$this->_getHelper()->isReadablePopupObject()) {
             $this->_available = false;
             return false;
         }

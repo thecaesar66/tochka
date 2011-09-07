@@ -20,12 +20,21 @@
  *
  * @category    Mage
  * @package     Mage_Widget
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
  * Widget Instance Model
+ *
+ * @method Mage_Widget_Model_Resource_Widget_Instance _getResource()
+ * @method Mage_Widget_Model_Resource_Widget_Instance getResource()
+ * @method string getTitle()
+ * @method Mage_Widget_Model_Widget_Instance setTitle(string $value)
+ * @method Mage_Widget_Model_Widget_Instance setStoreIds(string $value)
+ * @method Mage_Widget_Model_Widget_Instance setWidgetParameters(string $value)
+ * @method int getSortOrder()
+ * @method Mage_Widget_Model_Widget_Instance setSortOrder(int $value)
  *
  * @category    Mage
  * @package     Mage_Widget
@@ -74,9 +83,24 @@ class Mage_Widget_Model_Widget_Instance extends Mage_Core_Model_Abstract
             'all_products' => self::SINGLE_PRODUCT_LAYOUT_HANLDE,
         );
         foreach (Mage_Catalog_Model_Product_Type::getTypes() as $typeId => $type) {
-            $this->_layoutHandles[$typeId.'_products'] = str_replace('{{TYPE}}', $typeId, self::PRODUCT_TYPE_LAYOUT_HANDLE) ;
-            $this->_specificEntitiesLayoutHandles[$typeId.'_products'] = self::SINGLE_PRODUCT_LAYOUT_HANLDE;
+            $layoutHandle = str_replace('{{TYPE}}', $typeId, self::PRODUCT_TYPE_LAYOUT_HANDLE);
+            $this->_layoutHandles[$typeId . '_products'] = $layoutHandle;
+            $this->_specificEntitiesLayoutHandles[$typeId . '_products'] = self::SINGLE_PRODUCT_LAYOUT_HANLDE;
         }
+    }
+
+     /**
+     * Init mapping array of short fields to
+     * its full names
+     *
+     * @return Varien_Object
+     */
+    protected function _initOldFieldsMap()
+    {
+        $this->_oldFieldsMap = array(
+            'type' => 'instance_type',
+        );
+        return $this;
     }
 
     /**
@@ -136,6 +160,7 @@ class Mage_Widget_Model_Widget_Instance extends Mage_Core_Model_Abstract
         }
         $this->setData('page_groups', $tmpPageGroups);
         $this->setData('page_group_ids', $pageGroupIds);
+
         return parent::_beforeSave();
     }
 
@@ -474,16 +499,22 @@ class Mage_Widget_Model_Widget_Instance extends Mage_Core_Model_Abstract
         if ($templatePath) {
             $template = ' template="' . $templatePath . '"';
         }
-        $xml .= '<block type="' . $this->getType() . '" name="' . Mage::helper('core')->uniqHash() . '"' . $template . '>';
+
+        $hash = Mage::helper('core')->uniqHash();
+        $xml .= '<block type="' . $this->getType() . '" name="' . $hash . '"' . $template . '>';
         foreach ($parameters as $name => $value) {
             if (is_array($value)) {
                 $value = implode(',', $value);
             }
             if ($name && strlen((string)$value)) {
-                $xml .= '<action method="setData"><name>' . $name . '</name><value>' . Mage::helper('widget')->htmlEscape($value) . '</value></action>';
+                $xml .= '<action method="setData">'
+                    . '<name>' . $name . '</name>'
+                    . '<value>' . Mage::helper('widget')->htmlEscape($value) . '</value>'
+                    . '</action>';
             }
         }
         $xml .= '</block></reference>';
+
         return $xml;
     }
 
@@ -507,7 +538,7 @@ class Mage_Widget_Model_Widget_Instance extends Mage_Core_Model_Abstract
      */
     protected function _afterSave()
     {
-        if ($this->dataHasChangedFor('page_groups')) {
+        if ($this->dataHasChangedFor('page_groups') || $this->dataHasChangedFor('widget_parameters')) {
             $this->_invalidateCache();
         }
         return parent::_afterSave();

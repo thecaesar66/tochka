@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Adminhtml
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -55,7 +55,8 @@ class Mage_Adminhtml_Block_Customer_Edit_Tab_Orders extends Mage_Adminhtml_Block
             ->addFieldToSelect('billing_name')
             ->addFieldToSelect('shipping_name')
             ->addFieldToFilter('customer_id', Mage::registry('current_customer')->getId())
-        ;
+            ->setIsCustomerMode(true);
+
         $this->setCollection($collection);
         return parent::_prepareCollection();
     }
@@ -109,13 +110,15 @@ class Mage_Adminhtml_Block_Customer_Edit_Tab_Orders extends Mage_Adminhtml_Block
             ));
         }
 
-        $this->addColumn('action', array(
-            'header'    => ' ',
-            'filter'    => false,
-            'sortable'  => false,
-            'width'     => '100px',
-            'renderer'  => 'adminhtml/sales_reorder_renderer_action'
-        ));
+        if (Mage::helper('sales/reorder')->isAllow()) {
+            $this->addColumn('action', array(
+                'header'    => ' ',
+                'filter'    => false,
+                'sortable'  => false,
+                'width'     => '100px',
+                'renderer'  => 'adminhtml/sales_reorder_renderer_action'
+            ));
+        }
 
         return parent::_prepareColumns();
     }

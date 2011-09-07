@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Catalog
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -65,7 +65,13 @@ class Mage_Catalog_Block_Widget_Link
     public function getHref()
     {
         if (!$this->_href) {
-            $store = Mage::app()->getStore();
+            
+            if($this->hasStoreId()) {
+                $store = Mage::app()->getStore($this->getStoreId());
+            } else {
+                $store = Mage::app()->getStore();
+            }
+
             /* @var $store Mage_Core_Model_Store */
             $href = "";
             if ($this->getData('id_path')) {
@@ -78,6 +84,11 @@ class Mage_Catalog_Block_Widget_Link
             }
 
             $this->_href = $store->getUrl('', array('_direct' => $href));
+        }
+
+        if(strpos($this->_href, "___store") === false){
+            $symbol = (strpos($this->_href, "?") === false) ? "?" : "&";
+            $this->_href = $this->_href . $symbol . "___store=" . $store->getCode();
         }
 
         return $this->_href;

@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Customer
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -28,26 +28,10 @@
 /**
  * Customer attribute resource model
  *
- * @category   Mage
- * @package    Mage_Customer
- * @author     Magento Core Team <core@magentocommerce.com>
+ * @category    Mage
+ * @package     Mage_Customer
+ * @author      Magento Core Team <core@magentocommerce.com>
  */
-class Mage_Customer_Model_Entity_Attribute extends Mage_Eav_Model_Mysql4_Entity_Attribute
+class Mage_Customer_Model_Entity_Attribute extends Mage_Customer_Model_Resource_Attribute
 {
-    /**
-     * Perform actions before object save
-     *
-     * @param Mage_Core_Model_Abstract $object
-     * @return Mage_Customer_Model_Entity_Attribute
-     */
-    protected function _beforeSave(Mage_Core_Model_Abstract $object)
-    {
-        $inputFilter = $object->getInputFilter();
-        if (is_array($inputFilter)) {
-            $object->setInputFilter(implode(',', $inputFilter));
-        }
-        return parent::_beforeSave($object);
-    }
-
-
 }

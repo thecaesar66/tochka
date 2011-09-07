@@ -20,7 +20,7 @@
  *
  * @category    design
  * @package     base_default
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
 ?>
@@ -32,7 +32,6 @@
 <?php echo $this->getMessagesBlock()->getGroupedHtml() ?>
 
 <div class="billing-agreements">
-    <div class="info-box" style="border:0">
     <?php $billingAgreements = $this->getBillingAgreements(); ?>
     <?php if (count($billingAgreements) > 0): ?>
         <?php echo $this->getChildHtml('pager'); ?>
@@ -70,7 +69,6 @@
     <?php else: ?>
         <p><?php echo $this->__('There are no billing agreements yet.')?></p>
     <?php endif; ?>
-    </div>
 
     <?php $paymentMethods = $this->getWizardPaymentMethodOptions() ?>
     <?php if ($paymentMethods): ?>

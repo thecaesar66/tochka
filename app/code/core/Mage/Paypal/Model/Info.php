@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Paypal
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -51,12 +51,22 @@ class Mage_Paypal_Model_Info
     const CENTINEL_VPAS  = 'centinel_vpas_result';
     const CENTINEL_ECI   = 'centinel_eci_result';
 
+    // Next two fields are required for Brazil
+    const BUYER_TAX_ID   = 'buyer_tax_id';
+    const BUYER_TAX_ID_TYPE = 'buyer_tax_id_type';
+
     const PAYMENT_STATUS = 'payment_status';
     const PENDING_REASON = 'pending_reason';
     const IS_FRAUD       = 'is_fraud_detected';
     const PAYMENT_STATUS_GLOBAL = 'paypal_payment_status';
     const PENDING_REASON_GLOBAL = 'paypal_pending_reason';
     const IS_FRAUD_GLOBAL       = 'paypal_is_fraud_detected';
+
+    /**
+     * Possible buyer's tax id types (Brazil only)
+     */
+    const BUYER_TAX_ID_TYPE_CPF = 'BR_CPF';
+    const BUYER_TAX_ID_TYPE_CNPJ = 'BR_CNPJ';
 
     /**
      * All payment information map
@@ -76,6 +86,8 @@ class Mage_Paypal_Model_Info
         self::CVV2_MATCH     => 'paypal_cvv2_match',
         self::CENTINEL_VPAS  => self::CENTINEL_VPAS,
         self::CENTINEL_ECI   => self::CENTINEL_ECI,
+        self::BUYER_TAX_ID   => self::BUYER_TAX_ID,
+        self::BUYER_TAX_ID_TYPE => self::BUYER_TAX_ID_TYPE,
     );
 
     /**
@@ -115,6 +127,8 @@ class Mage_Paypal_Model_Info
      */
     protected $_paymentPublicMap = array(
         'paypal_payer_email',
+        self::BUYER_TAX_ID,
+        self::BUYER_TAX_ID_TYPE
     );
 
     /**
@@ -272,8 +286,8 @@ class Mage_Paypal_Model_Info
      *
      * @param string $code
      * @return string
-     * @see https://cms.paypal.com/us/cgi-bin/?&cmd=_render-content&content_ID=developer/e_howto_html_IPNandPDTVariables
-     * @see https://cms.paypal.com/us/cgi-bin/?&cmd=_render-content&content_ID=developer/e_howto_api_nvp_r_GetTransactionDetails
+     * @link https://cms.paypal.com/us/cgi-bin/?&cmd=_render-content&content_ID=developer/e_howto_html_IPNandPDTVariables
+     * @link https://cms.paypal.com/us/cgi-bin/?&cmd=_render-content&content_ID=developer/e_howto_api_nvp_r_GetTransactionDetails
      */
     public static function explainPendingReason($code)
     {
@@ -311,8 +325,8 @@ class Mage_Paypal_Model_Info
      *
      * @param $code
      * @return string
-     * @see https://cms.paypal.com/us/cgi-bin/?&cmd=_render-content&content_ID=developer/e_howto_html_IPNandPDTVariables
-     * @see https://cms.paypal.com/us/cgi-bin/?&cmd=_render-content&content_ID=developer/e_howto_api_nvp_r_GetTransactionDetails
+     * @link https://cms.paypal.com/us/cgi-bin/?&cmd=_render-content&content_ID=developer/e_howto_html_IPNandPDTVariables
+     * @link https://cms.paypal.com/us/cgi-bin/?&cmd=_render-content&content_ID=developer/e_howto_api_nvp_r_GetTransactionDetails
      */
     public static function explainReasonCode($code)
     {
@@ -425,6 +439,10 @@ class Mage_Paypal_Model_Info
                 return Mage::helper('paypal')->__('Address Verification System Response');
             case 'paypal_cvv2_match':
                 return Mage::helper('paypal')->__('CVV2 Check Result by PayPal');
+            case self::BUYER_TAX_ID :
+                return Mage::helper('paypal')->__('Buyer\'s Tax ID');
+            case self::BUYER_TAX_ID_TYPE :
+                return Mage::helper('paypal')->__('Buyer\'s Tax ID Type');
             case self::CENTINEL_VPAS:
                 return Mage::helper('paypal')->__('PayPal/Centinel Visa Payer Authentication Service Result');
             case self::CENTINEL_ECI:
@@ -456,6 +474,8 @@ class Mage_Paypal_Model_Info
             case self::CENTINEL_ECI:
                 $label = $this->_getCentinelEciLabel($value);
                 break;
+            case self::BUYER_TAX_ID_TYPE :
+                $value = $this->_getBuyerIdTypeValue($value);
             default:
                 return $value;
         }
@@ -465,7 +485,7 @@ class Mage_Paypal_Model_Info
     /**
      * Attempt to convert AVS check result code into label
      *
-     * @see https://cms.paypal.com/us/cgi-bin/?&cmd=_render-content&content_ID=developer/e_howto_api_nvp_AVSResponseCodes
+     * @link https://cms.paypal.com/us/cgi-bin/?&cmd=_render-content&content_ID=developer/e_howto_api_nvp_AVSResponseCodes
      * @param string $value
      * @return string
      */
@@ -474,6 +494,7 @@ class Mage_Paypal_Model_Info
         switch ($value) {
             // Visa, MasterCard, Discover and American Express
             case 'A':
+            case 'YN':
                 return Mage::helper('paypal')->__('Matched Address only (no ZIP)');
             case 'B': // international "A"
                 return Mage::helper('paypal')->__('Matched Address only (no ZIP). International');
@@ -494,8 +515,10 @@ class Mage_Paypal_Model_Info
             case 'I':
                 return Mage::helper('paypal')->__('N/A. International Unavailable');
             case 'Z':
+            case 'NY':
                 return Mage::helper('paypal')->__('Matched five-digit ZIP only (no Address)');
             case 'P': // international "Z"
+            case 'NY':
                 return Mage::helper('paypal')->__('Matched Postal Code only (no Address)');
             case 'R':
                 return Mage::helper('paypal')->__('N/A. Retry');
@@ -526,7 +549,7 @@ class Mage_Paypal_Model_Info
     /**
      * Attempt to convert CVV2 check result code into label
      *
-     * @see https://cms.paypal.com/us/cgi-bin/?&cmd=_render-content&content_ID=developer/e_howto_api_nvp_AVSResponseCodes
+     * @link https://cms.paypal.com/us/cgi-bin/?&cmd=_render-content&content_ID=developer/e_howto_api_nvp_AVSResponseCodes
      * @param string $value
      * @return string
      */
@@ -565,7 +588,7 @@ class Mage_Paypal_Model_Info
     /**
      * Attempt to convert centinel VPAS result into label
      *
-     * @see https://cms.paypal.com/us/cgi-bin/?&cmd=_render-content&content_ID=developer/e_howto_api_nvp_r_DoDirectPayment
+     * @link https://cms.paypal.com/us/cgi-bin/?&cmd=_render-content&content_ID=developer/e_howto_api_nvp_r_DoDirectPayment
      * @param string $value
      * @return string
      */
@@ -599,7 +622,7 @@ class Mage_Paypal_Model_Info
     /**
      * Attempt to convert centinel ECI result into label
      *
-     * @see https://cms.paypal.com/us/cgi-bin/?&cmd=_render-content&content_ID=developer/e_howto_api_nvp_r_DoDirectPayment
+     * @link https://cms.paypal.com/us/cgi-bin/?&cmd=_render-content&content_ID=developer/e_howto_api_nvp_r_DoDirectPayment
      * @param string $value
      * @return string
      */
@@ -616,5 +639,25 @@ class Mage_Paypal_Model_Info
             default:
                 return $value;
         }
+    }
+
+    /**
+     * Retrieve buyer id type value based on code received from PayPal (Brazil only)
+     *
+     * @param string $code
+     * @return string
+     */
+    protected function _getBuyerIdTypeValue($code)
+    {
+        $value = '';
+        switch ($code) {
+            case self::BUYER_TAX_ID_TYPE_CNPJ :
+                $value = Mage::helper('paypal')->__('CNPJ');
+                break;
+            case self::BUYER_TAX_ID_TYPE_CPF :
+                $value = Mage::helper('paypal')->__('CPF');
+                break;
+        }
+        return $value;
     }
 }

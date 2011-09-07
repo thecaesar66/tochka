@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Adminhtml
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -34,6 +34,30 @@
  */
 class Mage_Adminhtml_System_ConfigController extends Mage_Adminhtml_Controller_Action
 {
+    /**
+     * Whether current section is allowed
+     *
+     * @var bool
+     */
+    protected $_isSectionAllowedFlag = true;
+
+    /**
+     * Controller predispatch method
+     * Check if current section is found and is allowed
+     *
+     * @return Mage_Adminhtml_System_ConfigController
+     */
+    public function preDispatch()
+    {
+        parent::preDispatch();
+
+        if ($this->getRequest()->getParam('section')) {
+            $this->_isSectionAllowedFlag = $this->_isSectionAllowed($this->getRequest()->getParam('section'));
+        }
+
+        return $this;
+    }
+
     /**
      * Enter description here...
      *
@@ -73,7 +97,7 @@ class Mage_Adminhtml_System_ConfigController extends Mage_Adminhtml_Controller_A
         $this->getLayout()->getBlock('left')
             ->append($this->getLayout()->createBlock('adminhtml/system_config_tabs')->initTabs());
 
-        if ($this->_isSectionAllowed($this->getRequest()->getParam('section'))) {
+        if ($this->_isSectionAllowedFlag) {
             $this->_addContent($this->getLayout()->createBlock('adminhtml/system_config_edit')->initForm());
 
             $this->_addJs($this->getLayout()->createBlock('adminhtml/template')->setTemplate('system/shipping/ups.phtml'));
@@ -195,68 +219,29 @@ class Mage_Adminhtml_System_ConfigController extends Mage_Adminhtml_Controller_A
     }
 
     /**
-     * Enter description here...
+     * Export shipping table rates in csv format
      *
      */
     public function exportTableratesAction()
     {
-        $websiteModel = Mage::app()->getWebsite($this->getRequest()->getParam('website'));
-
+        $fileName   = 'tablerates.csv';
+        /** @var $gridBlock Mage_Adminhtml_Block_Shipping_Carrier_Tablerate_Grid */
+        $gridBlock  = $this->getLayout()->createBlock('adminhtml/shipping_carrier_tablerate_grid');
+        $website    = Mage::app()->getWebsite($this->getRequest()->getParam('website'));
         if ($this->getRequest()->getParam('conditionName')) {
             $conditionName = $this->getRequest()->getParam('conditionName');
         } else {
-            $conditionName = $websiteModel->getConfig('carriers/tablerate/condition_name');
+            $conditionName = $website->getConfig('carriers/tablerate/condition_name');
         }
-
-        $tableratesCollection = Mage::getResourceModel('shipping/carrier_tablerate_collection');
-        /* @var $tableratesCollection Mage_Shipping_Model_Mysql4_Carrier_Tablerate_Collection */
-        $tableratesCollection->setConditionFilter($conditionName);
-        $tableratesCollection->setWebsiteFilter($websiteModel->getId());
-        $tableratesCollection->load();
-
-        $csv = '';
-
-        $conditionName = Mage::getModel('shipping/carrier_tablerate')->getCode('condition_name_short', $conditionName);
-
-        $csvHeader = array('"'.Mage::helper('adminhtml')->__('Country').'"', '"'.Mage::helper('adminhtml')->__('Region/State').'"', '"'.Mage::helper('adminhtml')->__('Zip/Postal Code').'"', '"'.$conditionName.'"', '"'.Mage::helper('adminhtml')->__('Shipping Price').'"');
-        $csv .= implode(',', $csvHeader)."\n";
-
-        foreach ($tableratesCollection->getItems() as $item) {
-            if ($item->getData('dest_country') == '') {
-                $country = '*';
-            } else {
-                $country = $item->getData('dest_country');
-            }
-            if ($item->getData('dest_region') == '') {
-                $region = '*';
-            } else {
-                $region = $item->getData('dest_region');
-            }
-            if ($item->getData('dest_zip') == '') {
-                $zip = '*';
-            } else {
-                $zip = $item->getData('dest_zip');
-            }
-
-            $csvData = array($country, $region, $zip, $item->getData('condition_value'), $item->getData('price'));
-            foreach ($csvData as $cell) {
-                $cell = '"'.str_replace('"', '""', $cell).'"';
-            }
-            $csv .= implode(',', $csvData)."\n";
-        }
-
-        header('Pragma: public');
-        header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
-
-        header("Content-type: application/octet-stream");
-        header("Content-disposition: attachment; filename=tablerates.csv");
-        echo $csv;
-        exit;
+        $gridBlock->setWebsiteId($website->getId())->setConditionName($conditionName);
+        $content    = $gridBlock->getCsvFile();
+        $this->_prepareDownloadResponse($fileName, $content);
     }
 
     /**
-     * Enter description here...
+     * Check is allow modify system configuration
      *
+     * @return bool
      */
     protected function _isAllowed()
     {
@@ -276,14 +261,22 @@ class Mage_Adminhtml_System_ConfigController extends Mage_Adminhtml_Controller_A
         try {
             $session = Mage::getSingleton('admin/session');
             $resourceLookup = "admin/system/config/{$section}";
-            $resourceId = $session->getData('acl')->get($resourceLookup)->getResourceId();
-            if (!$session->isAllowed($resourceId)) {
-                throw new Exception('');
+            if ($session->getData('acl') instanceof Mage_Admin_Model_Acl) {
+                $resourceId = $session->getData('acl')->get($resourceLookup)->getResourceId();
+                if (!$session->isAllowed($resourceId)) {
+                    throw new Exception('');
+                }
+                return true;
             }
-            return true;
+        }
+        catch (Zend_Acl_Exception $e) {
+            $this->norouteAction();
+            $this->setFlag('', self::FLAG_NO_DISPATCH, true);
+            return false;
         }
         catch (Exception $e) {
-            $this->_forward('denied');
+            $this->deniedAction();
+            $this->setFlag('', self::FLAG_NO_DISPATCH, true);
             return false;
         }
     }

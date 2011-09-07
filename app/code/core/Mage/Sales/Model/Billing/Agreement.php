@@ -20,14 +20,35 @@
  *
  * @category    Mage
  * @package     Mage_Sales
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
  * Billing Agreement abstract model
  *
- * @author Magento Core Team <core@magentocommerce.com>
+ * @method Mage_Sales_Model_Resource_Billing_Agreement _getResource()
+ * @method Mage_Sales_Model_Resource_Billing_Agreement getResource()
+ * @method int getCustomerId()
+ * @method Mage_Sales_Model_Billing_Agreement setCustomerId(int $value)
+ * @method string getMethodCode()
+ * @method Mage_Sales_Model_Billing_Agreement setMethodCode(string $value)
+ * @method string getReferenceId()
+ * @method Mage_Sales_Model_Billing_Agreement setReferenceId(string $value)
+ * @method string getStatus()
+ * @method Mage_Sales_Model_Billing_Agreement setStatus(string $value)
+ * @method string getCreatedAt()
+ * @method Mage_Sales_Model_Billing_Agreement setCreatedAt(string $value)
+ * @method string getUpdatedAt()
+ * @method Mage_Sales_Model_Billing_Agreement setUpdatedAt(string $value)
+ * @method int getStoreId()
+ * @method Mage_Sales_Model_Billing_Agreement setStoreId(int $value)
+ * @method string getAgreementLabel()
+ * @method Mage_Sales_Model_Billing_Agreement setAgreementLabel(string $value)
+ *
+ * @category    Mage
+ * @package     Mage_Sales
+ * @author      Magento Core Team <core@magentocommerce.com>
  */
 class Mage_Sales_Model_Billing_Agreement extends Mage_Payment_Model_Billing_AgreementAbstract
 {
@@ -58,7 +79,7 @@ class Mage_Sales_Model_Billing_Agreement extends Mage_Payment_Model_Billing_Agre
     protected function _beforeSave()
     {
         $date = Mage::getModel('core/date')->gmtDate();
-        if ($this->isObjectNew()) {
+        if ($this->isObjectNew() && !$this->getCreatedAt()) {
             $this->setCreatedAt($date);
         } else {
             $this->setUpdatedAt($date);
@@ -128,13 +149,14 @@ class Mage_Sales_Model_Billing_Agreement extends Mage_Payment_Model_Billing_Agre
     {
         $this->verifyToken();
 
-        $this->getPaymentMethodInstance()
+        $paymentMethodInstance = $this->getPaymentMethodInstance()
             ->placeBillingAgreement($this);
 
         $this->setCustomerId($this->getCustomer()->getId())
             ->setMethodCode($this->getMethodCode())
             ->setReferenceId($this->getBillingAgreementId())
             ->setStatus(self::STATUS_ACTIVE)
+            ->setAgreementLabel($paymentMethodInstance->getTitle())
             ->save();
         return $this;
     }
@@ -207,13 +229,14 @@ class Mage_Sales_Model_Billing_Agreement extends Mage_Payment_Model_Billing_Agre
 
         $this->_paymentMethodInstance = (isset($baData['method_code']))
             ? Mage::helper('payment')->getMethodInstance($baData['method_code'])
-                ->setStore($payment->getMethodInstance()->getStore())
             : $payment->getMethodInstance();
-
-        $this->setCustomerId($payment->getOrder()->getCustomerId())
-            ->setMethodCode($this->_paymentMethodInstance->getCode())
-            ->setReferenceId($baData['billing_agreement_id'])
-            ->setStatus(self::STATUS_ACTIVE);
+        if ($this->_paymentMethodInstance) {
+            $this->_paymentMethodInstance->setStore($payment->getMethodInstance()->getStore());
+            $this->setCustomerId($payment->getOrder()->getCustomerId())
+                ->setMethodCode($this->_paymentMethodInstance->getCode())
+                ->setReferenceId($baData['billing_agreement_id'])
+                ->setStatus(self::STATUS_ACTIVE);
+        }
         return $this;
     }
 
@@ -246,7 +269,7 @@ class Mage_Sales_Model_Billing_Agreement extends Mage_Payment_Model_Billing_Agre
     /**
      * Add order relation to current billing agreement
      *
-     * @param int $orderId
+     * @param int|Mage_Sales_Model_Order $orderId
      * @return Mage_Sales_Model_Billing_Agreement
      */
     public function addOrderRelation($orderId)
@@ -260,7 +283,8 @@ class Mage_Sales_Model_Billing_Agreement extends Mage_Payment_Model_Billing_Agre
      */
     protected function _saveOrderRelations()
     {
-        foreach ($this->_relatedOrders as $orderId) {
+        foreach ($this->_relatedOrders as $order) {
+            $orderId = $order instanceof Mage_Sales_Model_Order ? $order->getId() : (int) $order;
             $this->getResource()->addOrderRelation($this->getId(), $orderId);
         }
     }

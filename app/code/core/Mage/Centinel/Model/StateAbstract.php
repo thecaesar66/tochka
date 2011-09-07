@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Centinel
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -128,7 +128,29 @@ abstract class Mage_Centinel_Model_StateAbstract extends Varien_Object
      *
      * @return bool
      */
-    abstract public function isLookupSuccessful();
+    final public function isLookupSuccessful()
+    {
+        if ($this->_isLookupStrictSuccessful()) {
+            return true;
+        } elseif (!$this->getIsModeStrict() && $this->_isLookupSoftSuccessful()) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Analyse lookup`s results. If lookup is strict successful return true
+     *
+     * @return bool
+     */
+    abstract protected function _isLookupStrictSuccessful();
+
+    /**
+     * Analyse lookup`s results. If lookup is soft successful return true
+     *
+     * @return bool
+     */
+    abstract protected function _isLookupSoftSuccessful();
 
     /**
      * Analyse lookup`s results. If it has require params for authenticate, return true

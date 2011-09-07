@@ -21,7 +21,7 @@
  *
  * @category    Mage
  * @package     Mage_Adminhtml
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
 -->
@@ -31,16 +31,16 @@
             <version>0.7.1</version>
         </Mage_Adminhtml>
     </modules>
-
     <global>
         <models>
             <adminhtml>
                 <class>Mage_Adminhtml_Model</class>
-                <resourceModel>adminhtml_mysql4</resourceModel>
+                <resourceModel>adminhtml_resource</resourceModel>
             </adminhtml>
-            <adminhtml_mysql4>
-                <class>Mage_Adminhtml_Model_Mysql4</class>
-            </adminhtml_mysql4>
+            <adminhtml_resource>
+                <class>Mage_Adminhtml_Model_Resource</class>
+                <deprecatedNode>adminhtml_mysql4</deprecatedNode>
+            </adminhtml_resource>
         </models>
         <blocks>
             <adminhtml>
@@ -56,7 +56,6 @@
                 </admin_emails_forgot_email_template>
             </email>
         </template>
-
         <events>
             <adminhtml_controller_action_predispatch_start>
                 <observers>
@@ -70,9 +69,16 @@
                     </massaction>
                 </observers>
             </adminhtml_controller_action_predispatch_start>
+            <admin_user_authenticate_after>
+                <observers>
+                    <configuration_files_access_level_verification>
+                        <class>adminhtml/observer</class>
+                        <method>clearCacheConfigurationFilesAccessLevelVerification</method>
+                    </configuration_files_access_level_verification>
+                </observers>
+            </admin_user_authenticate_after>
         </events>
     </global>
-
     <admin>
         <routers>
             <adminhtml>
@@ -84,7 +90,6 @@
             </adminhtml>
         </routers>
     </admin>
-
     <adminhtml>
         <events>
             <controller_action_predispatch>
@@ -103,6 +108,14 @@
                     </bind_locale>
                 </observers>
             </core_locale_set_locale>
+            <admin_system_config_changed_section_admin>
+                <observers>
+                    <bind_locale>
+                        <class>adminhtml/system_config_backend_admin_observer</class>
+                        <method>afterCustomUrlChanged</method>
+                    </bind_locale>
+                </observers>
+            </admin_system_config_changed_section_admin>
         </events>
         <global_search>
             <products>
@@ -152,6 +165,8 @@
                     <available_product_types>
                         <simple/>
                         <virtual/>
+                        <configurable/>
+                        <grouped/>
                     </available_product_types>
                 </create>
             </order>
@@ -163,11 +178,30 @@
                 <forgot_email_template>system_emails_forgot_email_template</forgot_email_template>
                 <forgot_email_identity>general</forgot_email_identity>
             </emails>
+            <dashboard>
+                <enable_charts>1</enable_charts>
+            </dashboard>
         </system>
+        <general>
+            <file>
+                <sitemap_generate_valid_paths>
+                    <!-- This data should be merged with public_files_valid_paths -->
+                    <available>
+                        <any_path>/*/sitemap.xml</any_path>
+                    </available>
+                </sitemap_generate_valid_paths>
+            </file>
+            <validator_data>
+                <input_types>
+                    <price>price</price>
+                    <media_image>media_image</media_image>
+                    <gallery>gallery</gallery>
+                </input_types>
+            </validator_data>
+        </general>
     </default>
     <stores>
         <admin>
-            <!-- default admin design package and theme -->
             <design>
                 <package>
                     <name>default</name>
@@ -182,7 +216,9 @@
         <admin>
             <web>
                 <routers>
-                    <frontend><disabled>true</disabled></frontend>
+                    <frontend>
+                        <disabled>true</disabled>
+                    </frontend>
                 </routers>
                 <default>
                     <no_route>admin/index/noRoute</no_route>

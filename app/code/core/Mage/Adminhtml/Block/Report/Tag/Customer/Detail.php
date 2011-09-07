@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Adminhtml
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -40,7 +40,7 @@ class Mage_Adminhtml_Block_Report_Tag_Customer_Detail extends Mage_Adminhtml_Blo
         $this->_controller = 'report_tag_customer_detail';
 
         $customer = Mage::getModel('customer/customer')->load($this->getRequest()->getParam('id'));
-        $customerName = $customer->getName();
+        $customerName = $this->escapeHtml($customer->getName());
         $this->_headerText = Mage::helper('reports')->__('Tags Submitted by %s', $customerName);
         parent::__construct();
         $this->_removeButton('add');

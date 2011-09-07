@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Wishlist
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -37,13 +37,15 @@ class Mage_Wishlist_Block_Customer_Sidebar extends Mage_Wishlist_Block_Abstract
     /**
      * Add sidebar conditions to collection
      *
-     * @param Mage_Wishlist_Model_Mysql4_Product_Collection $collection
+     * @param  Mage_Wishlist_Model_Resource_Item_Collection $collection
      * @return Mage_Wishlist_Block_Customer_Wishlist
      */
     protected function _prepareCollection($collection)
     {
-        $collection->setPage(1, 3);
-        $collection->addAttributeToSort('added_at', 'desc');
+        $collection->setCurPage(1)
+            ->setPageSize(3)
+            ->setInStockFilter(true)
+            ->addWishListSortOrder('added_at', 'desc');
 
         return $this;
     }
@@ -55,7 +57,7 @@ class Mage_Wishlist_Block_Customer_Sidebar extends Mage_Wishlist_Block_Abstract
      */
     protected function _toHtml()
     {
-        if ($this->_getHelper()->hasItems()) {
+        if (($this->getCustomWishlist() && $this->getItemCount()) || $this->_getHelper()->hasItems()) {
             return parent::_toHtml();
         }
 
@@ -76,7 +78,7 @@ class Mage_Wishlist_Block_Customer_Sidebar extends Mage_Wishlist_Block_Abstract
      * Retrieve URL for removing item from wishlist
      *
      * @deprecated back compatibility alias for getItemRemoveUrl
-     * @param Mage_Wishlist_Model_Item $item
+     * @param  Mage_Wishlist_Model_Item $item
      * @return string
      */
     public function getRemoveItemUrl($item)
@@ -88,11 +90,41 @@ class Mage_Wishlist_Block_Customer_Sidebar extends Mage_Wishlist_Block_Abstract
      * Retrieve URL for adding product to shopping cart and remove item from wishlist
      *
      * @deprecated
-     * @param Mage_Catalog_Model_Product $product
+     * @param  Mage_Catalog_Model_Product|Mage_Wishlist_Model_Item $product
      * @return string
      */
     public function getAddToCartItemUrl($product)
     {
         return $this->getItemAddToCartUrl($product);
+    }
+
+    /**
+     * Retrieve Wishlist model
+     *
+     * @return Mage_Wishlist_Model_Wishlist
+     */
+    protected function _getWishlist()
+    {
+
+        if (!$this->getCustomWishlist() || !is_null($this->_wishlist)) {
+            return parent::_getWishlist();
+        }
+
+        $this->_wishlist = $this->getCustomWishlist();
+        return $this->_wishlist;
+    }
+
+    /**
+     * Return wishlist items count
+     *
+     * @return int
+     */
+    public function getItemCount()
+    {
+        if ($this->getCustomWishlist()) {
+            return $this->getCustomWishlist()->getItemsCount();
+        }
+
+        return $this->helper('wishlist')->getItemCount();
     }
 }

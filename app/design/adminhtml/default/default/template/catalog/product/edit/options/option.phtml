@@ -20,7 +20,7 @@
  *
  * @category    design
  * @package     default_default
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
 ?>
@@ -39,7 +39,7 @@ var firstStepTemplate = '<div class="option-box" id="option_{{id}}">'+
                 '<tr>'+
                     '<th class="opt-title"><?php echo Mage::helper('catalog')->__('Title') ?> <span class="required">*</span></th>'+
                     '<th class="opt-type"><?php echo Mage::helper('catalog')->__('Input Type') ?> <span class="required">*</span></th>'+
-                    '<th class="opt-req"><?php echo Mage::helper('catalog')->__('Is Required') ?></th>'+
+                    '<th class="opt-req"><?php echo $this->jsQuoteEscape(Mage::helper('catalog')->__('Is Required')) ?></th>'+
                     '<th class="opt-order"><?php echo Mage::helper('catalog')->__('Sort Order') ?></th>'+
                     '<th class="a-right"><?php echo $this->jsQuoteEscape($this->getDeleteButtonHtml()) ?></th>'+
                 '</tr>'+
@@ -275,6 +275,7 @@ var productOptionType = {
                 if (option.value==data.price_type) option.selected = true;
             });
         }
+
     },
     bindSelectInputType : function(){
         var types = $$('.select-product-option-type');

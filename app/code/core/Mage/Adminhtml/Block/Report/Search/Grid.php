@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Adminhtml
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -75,7 +75,6 @@ class Mage_Adminhtml_Block_Report_Search_Grid extends Mage_Adminhtml_Block_Widge
 
         $this->addColumn('query_text', array(
             'header'    =>Mage::helper('reports')->__('Search Query'),
-            'filter'    =>false,
             'index'     =>'query_text'
         ));
 
@@ -106,7 +105,7 @@ class Mage_Adminhtml_Block_Report_Search_Grid extends Mage_Adminhtml_Block_Widge
         ));
 
         $this->addExportType('*/*/exportSearchCsv', Mage::helper('reports')->__('CSV'));
-        $this->addExportType('*/*/exportSearchExcel', Mage::helper('reports')->__('Excel'));
+        $this->addExportType('*/*/exportSearchExcel', Mage::helper('reports')->__('Excel XML'));
 
         return parent::_prepareColumns();
     }

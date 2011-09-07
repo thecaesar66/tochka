@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_CatalogSearch
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -37,7 +37,7 @@ class Mage_CatalogSearch_Block_Result extends Mage_Core_Block_Template
     /**
      * Catalog Product collection
      *
-     * @var Mage_CatalogSearch_Model_Mysql4_Fulltext_Collection
+     * @var Mage_CatalogSearch_Model_Resource_Fulltext_Collection
      */
     protected $_productCollection;
 
@@ -81,6 +81,16 @@ class Mage_CatalogSearch_Block_Result extends Mage_Core_Block_Template
     }
 
     /**
+     * Retrieve additional blocks html
+     *
+     * @return string
+     */
+    public function getAdditionalHtml()
+    {
+        return $this->getLayout()->getBlock('search_result_list')->getChildHtml('additional');
+    }
+
+    /**
      * Retrieve search list toolbar block
      *
      * @return Mage_Catalog_Block_Product_List
@@ -95,7 +105,8 @@ class Mage_CatalogSearch_Block_Result extends Mage_Core_Block_Template
      *
      * @return Mage_CatalogSearch_Block_Result
      */
-    public function setListOrders() {
+    public function setListOrders()
+    {
         $category = Mage::getSingleton('catalog/layer')
             ->getCurrentCategory();
         /* @var $category Mage_Catalog_Model_Category */
@@ -118,7 +129,8 @@ class Mage_CatalogSearch_Block_Result extends Mage_Core_Block_Template
      *
      * @return Mage_CatalogSearch_Block_Result
      */
-    public function setListModes() {
+    public function setListModes()
+    {
         $this->getListBlock()
             ->setModes(array(
                 'grid' => $this->__('Grid'),
@@ -132,9 +144,10 @@ class Mage_CatalogSearch_Block_Result extends Mage_Core_Block_Template
      *
      * @return Mage_CatalogSearch_Block_Result
      */
-    public function setListCollection() {
-        $this->getListBlock()
-           ->setCollection($this->_getProductCollection());
+    public function setListCollection()
+    {
+//        $this->getListBlock()
+//           ->setCollection($this->_getProductCollection());
        return $this;
     }
 
@@ -151,12 +164,12 @@ class Mage_CatalogSearch_Block_Result extends Mage_Core_Block_Template
     /**
      * Retrieve loaded category collection
      *
-     * @return Mage_CatalogSearch_Model_Mysql4_Fulltext_Collection
+     * @return Mage_CatalogSearch_Model_Resource_Fulltext_Collection
      */
     protected function _getProductCollection()
     {
         if (is_null($this->_productCollection)) {
-            $this->_productCollection = Mage::getSingleton('catalogsearch/layer')->getProductCollection();
+            $this->_productCollection = $this->getListBlock()->getLoadedProductCollection();
         }
 
         return $this->_productCollection;

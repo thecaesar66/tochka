@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Review
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -35,6 +35,11 @@ class Mage_Review_Block_Product_View extends Mage_Catalog_Block_Product_View
 {
     protected $_reviewsCollection;
 
+    /**
+     * Render block HTML
+     *
+     * @return string
+     */
     protected function _toHtml()
     {
         $this->getProduct()->setShortDescription(null);
@@ -69,7 +74,7 @@ class Mage_Review_Block_Product_View extends Mage_Catalog_Block_Product_View
         if (null === $this->_reviewsCollection) {
             $this->_reviewsCollection = Mage::getModel('review/review')->getCollection()
                 ->addStoreFilter(Mage::app()->getStore()->getId())
-                ->addStatusFilter('approved')
+                ->addStatusFilter(Mage_Review_Model_Review::STATUS_APPROVED)
                 ->addEntityFilter('product', $this->getProduct()->getId())
                 ->setDateOrder();
         }

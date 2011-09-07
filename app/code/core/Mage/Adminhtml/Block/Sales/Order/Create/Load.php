@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Adminhtml
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -44,6 +44,12 @@ class Mage_Adminhtml_Block_Sales_Order_Create_Load extends Mage_Core_Block_Templ
                 $result[$name] = $block->toHtml();
             }
         }
-        return Mage::helper('core')->jsonEncode($result);
+        $resultJson = Mage::helper('core')->jsonEncode($result);
+        $jsVarname = $this->getRequest()->getParam('as_js_varname');
+        if ($jsVarname) {
+            return Mage::helper('adminhtml/js')->getScript(sprintf('var %s = %s', $jsVarname, $resultJson));
+        } else {
+            return $resultJson;
+        }
     }
 }

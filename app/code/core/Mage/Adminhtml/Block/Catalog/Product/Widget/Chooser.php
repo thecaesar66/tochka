@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Adminhtml
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -69,10 +69,12 @@ class Mage_Adminhtml_Block_Catalog_Product_Widget_Chooser extends Mage_Adminhtml
             ->setSourceUrl($sourceUrl)
             ->setUniqId($uniqId);
 
-
         if ($element->getValue()) {
             $value = explode('/', $element->getValue());
-            $productId = isset($value[1]) ? $value[1] : false;
+            $productId = false;
+            if (isset($value[0]) && isset($value[1]) && $value[0] == 'product') {
+                $productId = $value[1];
+            }
             $categoryId = isset($value[2]) ? $value[2] : false;
             $label = '';
             if ($categoryId) {

@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Adminhtml
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -76,15 +76,21 @@ class Mage_Adminhtml_Block_Review_Rating_Detailed extends Mage_Adminhtml_Block_T
                     ->load()
                     ->addOptionToItems();
             } else {
-                 $ratingCollection = Mage::getModel('rating/rating')
+                $ratingCollection = Mage::getModel('rating/rating')
                     ->getResourceCollection()
                     ->addEntityFilter('product')
                     ->setStoreFilter($this->getRequest()->getParam('select_stores') ? $this->getRequest()->getParam('select_stores') : $this->getRequest()->getParam('stores'))
                     ->setPositionOrder()
                     ->load()
                     ->addOptionToItems();
-
-
+                if(intval($this->getRequest()->getParam('id'))){
+                    $this->_voteCollection = Mage::getModel('rating/rating_option_vote')
+                        ->getResourceCollection()
+                        ->setReviewFilter(intval($this->getRequest()->getParam('id')))
+                        ->addOptionInfo()
+                        ->load()
+                        ->addRatingOptions();
+                }
             }
             $this->setRatingCollection( ( $ratingCollection->getSize() ) ? $ratingCollection : false );
         }
@@ -104,9 +110,9 @@ class Mage_Adminhtml_Block_Review_Rating_Detailed extends Mage_Adminhtml_Block_T
 
             if(isset($ratings[$option->getRatingId()])) {
                 return $option->getId() == $ratings[$option->getRatingId()];
+            }elseif(!$this->_voteCollection) {
+                return false;
             }
-
-            return false;
         }
 
         if($this->_voteCollection) {

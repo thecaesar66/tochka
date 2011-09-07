@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Shipping
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -120,7 +120,11 @@ class Mage_Shipping_Model_Carrier_Tablerate
             $method->setMethod('bestway');
             $method->setMethodTitle($this->getConfigData('name'));
 
-            $shippingPrice = $this->getFinalPriceWithHandlingFee($rate['price']);
+            if ($request->getFreeShipping() === true || ($request->getPackageQty() == $freeQty)) {
+                $shippingPrice = 0;
+            } else {
+                $shippingPrice = $this->getFinalPriceWithHandlingFee($rate['price']);
+            }
 
             $method->setPrice($shippingPrice);
             $method->setCost($rate['cost']);

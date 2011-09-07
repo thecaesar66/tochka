@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Rule
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -80,7 +80,7 @@ class Mage_Rule_Model_Rule extends Mage_Core_Model_Abstract
     /**
      * Retrieve Condition model
      *
-     * @return Mage_SalesRule_Model_Rule_Condition_Abstract
+     * @return Mage_SalesRule_Model_Rule_Condition_Combine
      */
     public function getConditions()
     {
@@ -90,12 +90,19 @@ class Mage_Rule_Model_Rule extends Mage_Core_Model_Abstract
         return $this->_conditions;
     }
 
+    /**
+     * @return Mage_Rule_Model_Action_Collection
+     */
     public function getActionsInstance()
     {
         return Mage::getModel('rule/action_collection');
     }
 
-    public function _resetActions($actions=null)
+    /**
+     * @param Mage_Rule_Model_Action_Collection $actions
+     * @return Mage_Rule_Model_Rule
+     */
+    public function _resetActions($actions = null)
     {
         if (is_null($actions)) {
             $actions = $this->getActionsInstance();
@@ -345,7 +352,7 @@ class Mage_Rule_Model_Rule extends Mage_Core_Model_Abstract
         $this->_isReadonly = (boolean) $value;
         return $this;
     }
-    
+
     /**
      * Validates data for rule
      * @param Varien_Object $object
@@ -354,11 +361,11 @@ class Mage_Rule_Model_Rule extends Mage_Core_Model_Abstract
      */
     public function validateData(Varien_Object $object)
     {
-        if($object->getData('from_date') && $object->getData('to_date')){
-            $dateStartUnixTime = strtotime($object->getData('from_date'));
-            $dateEndUnixTime   = strtotime($object->getData('to_date'));
+        if ($object->getData('from_date') && $object->getData('to_date')) {
+            $dateStart = new Zend_Date($object->getData('from_date'), Varien_Date::DATE_INTERNAL_FORMAT);
+            $dateEnd = new Zend_Date($object->getData('to_date'), Varien_Date::DATE_INTERNAL_FORMAT);
 
-            if ($dateEndUnixTime < $dateStartUnixTime) {
+            if ($dateStart->compare($dateEnd)===1) {
                 return array(Mage::helper('rule')->__("End Date should be greater than Start Date"));
             }
         }

@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Paypal
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -137,6 +137,18 @@ class Mage_Paypal_Model_Pro
     }
 
     /**
+     * Destroy existing NVP Api object
+     *
+     * @return Mage_Paypal_Model_Pro
+     */
+    public function resetApi()
+    {
+        $this->_api = null;
+
+        return $this;
+    }
+
+    /**
      * Instantiate and return info model
      *
      * @return Mage_Paypal_Model_Info
@@ -242,7 +254,7 @@ class Mage_Paypal_Model_Pro
                 ->setAmount($amount)
                 ->setCurrencyCode($order->getBaseCurrencyCode())
             ;
-            $canRefundMore = $order->canCreditmemo(); // TODO: fix this to be able to create multiple refunds
+            $canRefundMore = $payment->getCreditmemo()->getInvoice()->canRefund();
             $isFullRefund = !$canRefundMore
                 && (0 == ((float)$order->getBaseTotalOnlineRefunded() + (float)$order->getBaseTotalOfflineRefunded()));
             $api->setRefundType($isFullRefund ? Mage_Paypal_Model_Config::REFUND_TYPE_FULL
@@ -274,7 +286,7 @@ class Mage_Paypal_Model_Pro
      */
     public function canReviewPayment(Mage_Payment_Model_Info $payment)
     {
-        return Mage_Paypal_Model_Info::isFraudReviewAllowed($payment);
+        return Mage_Paypal_Model_Info::isPaymentReviewRequired($payment);
     }
 
     /**
@@ -352,8 +364,9 @@ class Mage_Paypal_Model_Pro
      * @param Mage_Payment_Model_Info $paymentInfo
      * @throws Mage_Core_Exception
      */
-    public function submitRecurringProfile(Mage_Payment_Model_Recurring_Profile $profile, Mage_Payment_Model_Info $paymentInfo)
-    {
+    public function submitRecurringProfile(Mage_Payment_Model_Recurring_Profile $profile,
+        Mage_Payment_Model_Info $paymentInfo
+    ) {
         $api = $this->getApi();
         Varien_Object_Mapper::accumulateByMap($profile, $api, array(
             'token', // EC fields
@@ -394,6 +407,16 @@ class Mage_Paypal_Model_Pro
      */
     public function updateRecurringProfile(Mage_Payment_Model_Recurring_Profile $profile)
     {
+
+    }
+
+    /**
+     * Manage status
+     *
+     * @param Mage_Payment_Model_Recurring_Profile $profile
+     */
+    public function updateRecurringProfileStatus(Mage_Payment_Model_Recurring_Profile $profile)
+    {
         $api = $this->getApi();
         $action = null;
         switch ($profile->getNewState()) {
@@ -409,16 +432,6 @@ class Mage_Paypal_Model_Pro
             ->setAction($action)
             ->callManageRecurringPaymentsProfileStatus()
         ;
-    }
-
-    /**
-     * Manage status
-     *
-     * @param Mage_Payment_Model_Recurring_Profile $profile
-     */
-    public function updateRecurringProfileStatus(Mage_Payment_Model_Recurring_Profile $profile)
-    {
-
     }
 
     /**

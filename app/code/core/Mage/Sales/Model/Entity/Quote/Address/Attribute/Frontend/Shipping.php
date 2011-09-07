@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Sales
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -31,11 +31,15 @@ class Mage_Sales_Model_Entity_Quote_Address_Attribute_Frontend_Shipping
     public function fetchTotals(Mage_Sales_Model_Quote_Address $address)
     {
         $amount = $address->getShippingAmount();
-        if ($amount!=0) {
+        if ($amount != 0) {
+            $title = Mage::helper('sales')->__('Shipping & Handling');
+            if ($address->getShippingDescription()) {
+                $title .= ' (' . $address->getShippingDescription() . ')';
+            }
             $address->addTotal(array(
-                'code'=>'shipping',
-                'title'=>Mage::helper('sales')->__('Shipping & Handling').' ('.$address->getShippingDescription().')',
-                'value'=>$address->getShippingAmount()
+                'code' => 'shipping',
+                'title' => $title,
+                'value' => $address->getShippingAmount()
             ));
         }
         return $this;

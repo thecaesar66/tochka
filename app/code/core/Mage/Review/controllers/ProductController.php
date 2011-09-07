@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Review
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -220,7 +220,12 @@ class Mage_Review_ProductController extends Mage_Core_Controller_Front_Action
     {
         if ($product = $this->_initProduct()) {
             Mage::register('productId', $product->getId());
-            Mage::getModel('catalog/design')->applyDesign($product, Mage_Catalog_Model_Design::APPLY_FOR_PRODUCT);
+
+            $design = Mage::getSingleton('catalog/design');
+            $settings = $design->getDesignSettings($product);
+            if ($settings->getCustomDesign()) {
+                $design->applyCustomDesign($settings->getCustomDesign());
+            }
             $this->_initProductLayout($product);
 
             // update breadcrumbs
@@ -291,4 +296,3 @@ class Mage_Review_ProductController extends Mage_Core_Controller_Front_Action
         $this->generateLayoutXml()->generateLayoutBlocks();
     }
 }
-

@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Adminhtml
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -53,6 +53,13 @@ class  Mage_Adminhtml_Block_Sales_Items_Abstract extends Mage_Adminhtml_Block_Te
      * @var array
      */
     protected $_columnRenders = array();
+
+    /**
+     * Flag - if it is set method canEditQty will return value of it
+     *
+     * @var boolean | null
+     */
+    protected $_canEditQty = null;
 
     /**
      * Init block
@@ -166,7 +173,25 @@ class  Mage_Adminhtml_Block_Sales_Items_Abstract extends Mage_Adminhtml_Block_Te
 
         return $this->getItemRenderer($type)
             ->setItem($item)
+            ->setCanEditQty($this->canEditQty())
             ->toHtml();
+    }
+
+    /**
+     * Retrieve rendered item extra info html content
+     *
+     * @param Varien_Object $item
+     * @return string
+     */
+    public function getItemExtraInfoHtml(Varien_Object $item)
+    {
+        $extraInfoBlock = $this->getChild('order_item_extra_info');
+        if ($extraInfoBlock) {
+            return $extraInfoBlock
+                ->setItem($item)
+                ->toHtml();
+        }
+        return '';
     }
 
     /**
@@ -419,12 +444,31 @@ class  Mage_Adminhtml_Block_Sales_Items_Abstract extends Mage_Adminhtml_Block_Te
     }
 
     /**
+     * Setter for flag _canEditQty
+     *
+     * @return Mage_Adminhtml_Block_Sales_Items_Abstract
+     * @see self::_canEditQty
+     * @see self::canEditQty
+     */
+    public function setCanEditQty($value) {
+        $this->_canEditQty = $value;
+        return $this;
+    }
+
+    /**
      * Check availability to edit quantity of item
      *
      * @return boolean
      */
     public function canEditQty()
     {
+        /**
+         * If parent block has set
+         */
+        if (!is_null($this->_canEditQty)) {
+            return $this->_canEditQty;
+        }
+
         /**
          * Disable editing of quantity of item if creating of shipment forced
          * and ship partially disabled for order

@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Catalog
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -119,10 +119,12 @@ class Mage_Catalog_Helper_Output extends Mage_Core_Helper_Abstract
      */
     public function productAttribute($product, $attributeHtml, $attributeName)
     {
-        $attribute = Mage::getSingleton('eav/config')->getAttribute('catalog_product', $attributeName);
+        $attribute = Mage::getSingleton('eav/config')->getAttribute(Mage_Catalog_Model_Product::ENTITY, $attributeName);
         if ($attribute && $attribute->getId() && ($attribute->getFrontendInput() != 'media_image')
             && (!$attribute->getIsHtmlAllowedOnFront() && !$attribute->getIsWysiwygEnabled())) {
-                $attributeHtml = $this->htmlEscape($attributeHtml);
+                if ($attribute->getFrontendInput() != 'price') {
+                    $attributeHtml = $this->escapeHtml($attributeHtml);
+                }
                 if ($attribute->getFrontendInput() == 'textarea') {
                     $attributeHtml = nl2br($attributeHtml);
                 }
@@ -132,10 +134,12 @@ class Mage_Catalog_Helper_Output extends Mage_Core_Helper_Abstract
                 $attributeHtml = $this->_getTemplateProcessor()->filter($attributeHtml);
             }
         }
+
         $attributeHtml = $this->process('productAttribute', $attributeHtml, array(
             'product'   => $product,
             'attribute' => $attributeName
         ));
+
         return $attributeHtml;
     }
 
@@ -149,11 +153,11 @@ class Mage_Catalog_Helper_Output extends Mage_Core_Helper_Abstract
      */
     public function categoryAttribute($category, $attributeHtml, $attributeName)
     {
-        $attribute = Mage::getSingleton('eav/config')->getAttribute('catalog_category', $attributeName);
+        $attribute = Mage::getSingleton('eav/config')->getAttribute(Mage_Catalog_Model_Category::ENTITY, $attributeName);
 
         if ($attribute && ($attribute->getFrontendInput() != 'image')
             && (!$attribute->getIsHtmlAllowedOnFront() && !$attribute->getIsWysiwygEnabled())) {
-            $attributeHtml = $this->htmlEscape($attributeHtml);
+            $attributeHtml = $this->escapeHtml($attributeHtml);
         }
         if ($attribute->getIsHtmlAllowedOnFront() && $attribute->getIsWysiwygEnabled()) {
             if (Mage::helper('catalog')->isUrlDirectivesParsingAllowed()) {

@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Core
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -126,8 +126,8 @@ class Mage_Core_Helper_Js extends Mage_Core_Helper_Abstract
                 'Please select an option.' => $this->__('Please select an option.'),
                 'This is a required field.' => $this->__('This is a required field.'),
                 'Please enter a valid number in this field.' => $this->__('Please enter a valid number in this field.'),
-                'Please use numbers only in this field. please avoid spaces or other characters such as dots or commas.' =>
-                    $this->__('Please use numbers only in this field. please avoid spaces or other characters such as dots or commas.'),
+                'Please use numbers only in this field. Please avoid spaces or other characters such as dots or commas.' =>
+                    $this->__('Please use numbers only in this field. Please avoid spaces or other characters such as dots or commas.'),
                 'Please use letters only (a-z) in this field.' => $this->__('Please use letters only (a-z) in this field.'),
                 'Please use only letters (a-z), numbers (0-9) or underscore(_) in this field, first character should be a letter.' =>
                     $this->__('Please use only letters (a-z), numbers (0-9) or underscore(_) in this field, first character should be a letter.'),
@@ -142,7 +142,8 @@ class Mage_Core_Helper_Js extends Mage_Core_Helper_Abstract
                     $this->__('Please enter a valid email address. For example johndoe@domain.com.'),
                 'Please enter 6 or more characters.' => $this->__('Please enter 6 or more characters.'),
                 'Please make sure your passwords match.' => $this->__('Please make sure your passwords match.'),
-                'Please enter a valid URL. http:// is required' => $this->__('Please enter a valid URL. http:// is required'),
+                'Please enter a valid URL. Protocol is required (http://, https:// or ftp://)' =>
+                    $this->__('Please enter a valid URL. Protocol is required (http://, https:// or ftp://)'),
                 'Please enter a valid URL. For example http://www.example.com or www.example.com' =>
                     $this->__('Please enter a valid URL. For example http://www.example.com or www.example.com'),
                 'Please enter a valid social security number. For example 123-45-6789.' =>
@@ -174,21 +175,46 @@ class Mage_Core_Helper_Js extends Mage_Core_Helper_Abstract
                 'Your order cannot be completed at this time as there is no payment methods available for it.' =>
                     $this->__('Your order cannot be completed at this time as there is no payment methods available for it.'),
                 'Please specify payment method.' => $this->__('Please specify payment method.'),
-                'Credit card number doesn\'t match credit card type' => $this->__('Credit card number does not match credit card type'),
-                'Card type does not match credit card number' => $this->__('Card type does not match credit card number'),
+                'Credit card number does not match credit card type.' => $this->__('Credit card number does not match credit card type.'),
+                'Card type does not match credit card number.' => $this->__('Card type does not match credit card number.'),
                 'Please enter a valid credit card verification number.' => $this->__('Please enter a valid credit card verification number.'),
                 'Please use only letters (a-z or A-Z), numbers (0-9) or underscore(_) in this field, first character should be a letter.' =>
                     $this->__('Please use only letters (a-z or A-Z), numbers (0-9) or underscores (_) in this field, first character must be a letter.'),
-                'Please input a valid CSS-length. For example 100px or 77pt or 20em or .5ex or 50%' => $this->__('Please input a valid CSS-length. For example 100px or 77pt or 20em or .5ex or 50%'),
+                'Please input a valid CSS-length. For example 100px or 77pt or 20em or .5ex or 50%.' =>
+                    $this->__('Please input a valid CSS-length. For example 100px or 77pt or 20em or .5ex or 50%.'),
                 'Maximum length exceeded.' => $this->__('Maximum length exceeded.'),
-
-
-    //Mage_Rule
-
                 'Your session has been expired, you will be relogged in now.' => $this->__('Your session has been expired, you will be relogged in now.'),
-                'Incorrect credit card expiration date' => $this->__('Incorrect credit card expiration date'),
-            // Date
+                'Incorrect credit card expiration date.' => $this->__('Incorrect credit card expiration date.'),
                 'This date is a required value.' => $this->__('This date is a required value.'),
+                'The value is not within the specified range.' => $this->__('The value is not within the specified range.'),
+                'Please use only letters (a-z or A-Z) or numbers (0-9) only in this field. No spaces or other characters are allowed.'
+                    => $this->__('Please use only letters (a-z or A-Z) or numbers (0-9) only in this field. No spaces or other characters are allowed.'),
+                'Please use only letters (a-z or A-Z) or numbers (0-9) or spaces and # only in this field.' =>
+                    $this->__('Please use only letters (a-z or A-Z) or numbers (0-9) or spaces and # only in this field.'),
+                'Please enter a valid fax number. For example (123) 456-7890 or 123-456-7890.' =>
+                    $this->__('Please enter a valid fax number. For example (123) 456-7890 or 123-456-7890.'),
+                'Please use only visible characters and spaces.' => $this->__('Please use only visible characters and spaces.'),
+                'Please enter 7 or more characters. Password should contain both numeric and alphabetic characters.' =>
+                    $this->__('Please enter 7 or more characters. Password should contain both numeric and alphabetic characters.'),
+                'Please enter a valid URL Key. For example "example-page", "example-page.html" or "anotherlevel/example-page".' =>
+                    $this->__('Please enter a valid URL Key. For example "example-page", "example-page.html" or "anotherlevel/example-page".'),
+                'Please enter a valid XML-identifier. For example something_1, block5, id-4.' =>
+                    $this->__('Please enter a valid XML-identifier. For example something_1, block5, id-4.'),
+                'Please enter a number 0 or greater in this field.' => $this->__('Please enter a number 0 or greater in this field.'),
+                'Text length does not satisfy specified text range.' => $this->__('Text length does not satisfy specified text range.'),
+                'Please enter a number lower than 100.' => $this->__('Please enter a number lower than 100.'),
+                'Please enter issue number or start date for switch/solo card type.' =>
+                    $this->__('Please enter issue number or start date for switch/solo card type.'),
+                'Please enter a valid day (1-%d).' => $this->__('Please enter a valid day (1-%d).'),
+                'Please enter a valid month (1-12).' => $this->__('Please enter a valid month (1-12).'),
+                'Please enter a valid year (1900-%d).' => $this->__('Please enter a valid year (1900-%d).'),
+                'Please enter a valid full date' => $this->__('Please enter a valid full date'),
+                'Please enter a valid date between %s and %s' =>
+                    $this->__('Please enter a valid date between %s and %s'),
+                'Please enter a valid date equal to or greater than %s' =>
+                    $this->__('Please enter a valid date equal to or greater than %s'),
+                'Please enter a valid date less than or equal to %s' =>
+                    $this->__('Please enter a valid date less than or equal to %s')
             );
             foreach ($this->_translateData as $key=>$value) {
                 if ($key == $value) {

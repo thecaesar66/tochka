@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Sales
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -66,6 +66,24 @@ class Mage_Sales_Block_Order_Invoice_Items extends Mage_Sales_Block_Items_Abstra
         if ($totals) {
             $totals->setInvoice($invoice);
             $html = $totals->toHtml();
+        }
+        return $html;
+    }
+
+    /**
+     * Get html of invoice comments block
+     *
+     * @param   Mage_Sales_Model_Order_Invoice $invoice
+     * @return  string
+     */
+    public function getInvoiceCommentsHtml($invoice)
+    {
+        $html = '';
+        $comments = $this->getChild('invoice_comments');
+        if ($comments) {
+            $comments->setEntity($invoice)
+                ->setTitle(Mage::helper('sales')->__('About Your Invoice'));
+            $html = $comments->toHtml();
         }
         return $html;
     }

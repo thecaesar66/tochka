@@ -20,9 +20,10 @@
  *
  * @category    Mage
  * @package     Mage_Sales
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
+
 
 /**
  * Item option collection
@@ -31,94 +32,7 @@
  * @package     Mage_Sales
  * @author      Magento Core Team <core@magentocommerce.com>
  */
-class Mage_Sales_Model_Mysql4_Quote_Item_Option_Collection extends Mage_Core_Model_Mysql4_Collection_Abstract
+class Mage_Sales_Model_Mysql4_Quote_Item_Option_Collection
+    extends Mage_Sales_Model_Resource_Quote_Item_Option_Collection
 {
-    protected function _construct()
-    {
-        $this->_init('sales/quote_item_option');
-    }
-
-    /**
-     * Apply quote item(s) filter to collection
-     *
-     * @param   int | array $item
-     * @return  Mage_Sales_Model_Mysql4_Quote_Item_Option_Collection
-     */
-    public function addItemFilter($item)
-    {
-        if (empty($item)) {
-            $this->_totalRecords = 0;
-            $this->_setIsLoaded(true);
-            //$this->addFieldToFilter('item_id', '');
-        } elseif (is_array($item)) {
-            $this->addFieldToFilter('item_id', array('in'=>$item));
-        } elseif ($item instanceof Mage_Sales_Model_Quote_Item) {
-            $this->addFieldToFilter('item_id', $item->getId());
-        } else {
-            $this->addFieldToFilter('item_id', $item);
-        }
-        return $this;
-    }
-
-    /**
-     * Get array of all product ids
-     *
-     * @return array
-     */
-    public function getProductIds()
-    {
-        $ids = array();
-        foreach ($this as $item) {
-            $ids[] = $item->getProductId();
-        }
-        return array_unique($ids);
-    }
-
-    /**
-     * Get all option for item
-     *
-     * @param   mixed $item
-     * @return  array
-     */
-    public function getOptionsByItem($item)
-    {
-        if ($item instanceof Mage_Sales_Model_Quote_Item) {
-            $itemId = $item->getId();
-        }
-        else {
-            $itemId = $item;
-        }
-
-        $options = array();
-        foreach ($this as $option) {
-            if ($option->getItemId() == $itemId) {
-                $options[] = $option;
-            }
-        }
-        return $options;
-    }
-
-    /**
-     * Get all option for item
-     *
-     * @param   mixed $item
-     * @return  array
-     */
-    public function getOptionsByProduct($product)
-    {
-        if ($product instanceof Mage_Catalog_Model_Product) {
-            $productId = $product->getId();
-        }
-        else {
-            $productId = $product;
-        }
-
-        $options = array();
-        foreach ($this as $option) {
-            if ($option->getProductId() == $productId) {
-                $options[] = $option;
-            }
-        }
-        return $options;
-    }
 }

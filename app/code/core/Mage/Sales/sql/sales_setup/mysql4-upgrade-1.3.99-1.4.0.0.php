@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Sales
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -1141,6 +1141,40 @@ $installer->getConnection()->query($select->crossUpdateFromSelect(array('order_t
 $installer->getConnection()->query('DROP TEMPORARY TABLE ' . $temporaryTable);
 
 
+/**
+ * Workaround for the coupon_code attribute that may be missed in the Mage_SalesRule/sql/mysql4-upgrade-0.7.10-0.7.11.php
+ * The problem is that Mage_SalesRule depends on Mage_Sales and sometimes the attribute doesn't get updated before this line of code.
+ * As a result: an existing column in the sales_flat_order table, but wrong type in the attribute registry and sometimes even data lost
+ * Reproduces on upgrading from 1.4.0.x to 1.4.1.0
+ *
+ * Test case:
+ * 1) Have Magento instance without flat sales yet, and without Mage_SalesRule/sql/mysql4-upgrade-0.7.10-0.7.11.php
+ * 2) Upgrade it to the flat one instantly (runs this upgrade). Without this code the proper upgrade of coupon_code is missed. Data is lost.
+ * 3) The Mage_SalesRule/sql/mysql4-upgrade-0.7.10-0.7.11.php runs AFTER this code, because it depends on Mage_Sales. But it is too late.
+ * Result: the attribute has wrong type and data may be lost depending on upgrade history.
+ */
+$orderEntityType = $installer->getEntityType('order');
+$orderEntityTypeId = $orderEntityType['entity_type_id'];
+$attribute = $installer->getAttribute($orderEntityTypeId, 'coupon_code');
+
+if ($attribute && is_array($attribute) && isset($attribute['backend_type']) && $attribute['backend_type'] !== 'static') {
+    try {
+        $installer->getConnection()->beginTransaction();
+        $installer->run("
+            UPDATE {$installer->getTable('sales_flat_order')} AS o, {$installer->getTable('sales_order_entity_varchar')} AS od
+            SET o.{$attribute['attribute_code']} = od.value
+            WHERE od.entity_id = o.entity_id
+                AND od.attribute_id = {$attribute['attribute_id']}
+                AND od.entity_type_id = {$orderEntityTypeId}
+        ");
+        $installer->updateAttribute($orderEntityTypeId, $attribute['attribute_code'], array('backend_type' => 'static'));
+        $installer->getConnection()->commit();
+    } catch (Exception $e) {
+        $installer->getConnection()->rollback();
+        throw $e;
+    }
+}
+
 // Remove previous tables
 $tablesToDrop = array(
     'sales_order_entity_decimal',
@@ -1165,6 +1199,65 @@ foreach ($tablesToDrop as $table) {
     $installer->getConnection()->query(
         'DROP TABLE ' . $installer->getConnection()->quoteIdentifier($table)
     );
+}
+
+
+/* Add columns to tables */
+$tableData = array(
+    'sales/quote_item' => array(
+        'price_incl_tax' => 'decimal',
+        'base_price_incl_tax' => 'decimal',
+        'row_total_incl_tax' => 'decimal',
+        'base_row_total_incl_tax' => 'decimal'
+    ),
+    'sales/order_item' => array(
+        'price_incl_tax' => 'decimal',
+        'base_price_incl_tax' => 'decimal',
+        'row_total_incl_tax' => 'decimal',
+        'base_row_total_incl_tax' => 'decimal'
+    ),
+    'sales/quote_address' => array(
+        'shipping_discount_amount' => 'decimal',
+        'base_shipping_discount_amount' => 'decimal',
+        'subtotal_incl_tax' => 'decimal',
+        'base_subtotal_total_incl_tax' => 'decimal',
+        'discount_description' => 'varchar'
+    ),
+    'sales/quote_address_item' => array(
+        'product_id' => 'int',
+        'super_product_id' => 'int',
+        'parent_product_id' => 'int',
+        'sku' => 'varchar',
+        'image' => 'varchar',
+        'name' => 'varchar',
+        'description' => 'text',
+        'free_shipping' => 'int',
+        'is_qty_decimal' => 'int',
+        'price' => 'decimal',
+        'discount_percent' => 'decimal',
+        'no_discount' => 'int',
+        'tax_percent' => 'decimal',
+        'base_price' => 'decimal',
+        'price_incl_tax' => 'decimal',
+        'base_price_incl_tax' => 'decimal',
+        'row_total_incl_tax' => 'decimal',
+        'base_row_total_incl_tax' => 'decimal'
+    ),
+    'sales/quote_payment' => array(
+        'additional_data' => 'text',
+        'cc_ss_issue' => 'varchar'
+    ),
+    'sales/quote_address_shipping_rate' => array(
+        'error_message' => 'text'
+    )
+);
+
+foreach ($tableData as $table => $columns) {
+    foreach ($columns as $columnName => $columnType) {
+        $installer->getConnection()->addColumn(
+            $installer->getTable($table), $columnName, $definitions[$columnType]
+        );
+    }
 }
 
 $installer->endSetup();

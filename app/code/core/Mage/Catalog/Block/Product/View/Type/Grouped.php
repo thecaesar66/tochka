@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Catalog
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -38,5 +38,24 @@ class Mage_Catalog_Block_Product_View_Type_Grouped extends Mage_Catalog_Block_Pr
     {
         return $this->getProduct()->getTypeInstance(true)
             ->getAssociatedProducts($this->getProduct());
+    }
+
+
+    /**
+     * Set preconfigured values to grouped associated products
+     *
+     * @return Mage_Catalog_Block_Product_View_Type_Grouped
+     */
+    public function setPreconfiguredValue() {
+        $configValues = $this->getProduct()->getPreconfiguredValues()->getSuperGroup();
+        if (is_array($configValues)) {
+            $associatedProducts = $this->getAssociatedProducts();
+            foreach ($associatedProducts as $item) {
+                if (isset($configValues[$item->getId()])) {
+                    $item->setQty($configValues[$item->getId()]);
+                }
+            }
+        }
+        return $this;
     }
 }

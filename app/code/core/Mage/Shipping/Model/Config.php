@@ -20,13 +20,21 @@
  *
  * @category    Mage
  * @package     Mage_Shipping
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
 class Mage_Shipping_Model_Config extends Varien_Object
 {
+    /**
+     * Shipping origin settings
+     */
+    const XML_PATH_ORIGIN_COUNTRY_ID = 'shipping/origin/country_id';
+    const XML_PATH_ORIGIN_REGION_ID  = 'shipping/origin/region_id';
+    const XML_PATH_ORIGIN_CITY       = 'shipping/origin/city';
+    const XML_PATH_ORIGIN_POSTCODE   = 'shipping/origin/postcode';
+
     protected static $_carriers;
 
     /**
@@ -35,7 +43,7 @@ class Mage_Shipping_Model_Config extends Varien_Object
      * @param   mixed $store
      * @return  array
      */
-    public function getActiveCarriers($store=null)
+    public function getActiveCarriers($store = null)
     {
         $carriers = array();
         $config = Mage::getStoreConfig('carriers', $store);
@@ -56,7 +64,7 @@ class Mage_Shipping_Model_Config extends Varien_Object
      * @param   mixed $store
      * @return  array
      */
-    public function getAllCarriers($store=null)
+    public function getAllCarriers($store = null)
     {
         $carriers = array();
         $config = Mage::getStoreConfig('carriers', $store);
@@ -76,7 +84,7 @@ class Mage_Shipping_Model_Config extends Varien_Object
      * @param   mixed $store
      * @return  Mage_Usa_Model_Shipping_Carrier_Abstract
      */
-    public function getCarrierInstance($carrierCode, $store=null)
+    public function getCarrierInstance($carrierCode, $store = null)
     {
         $carrierConfig =  Mage::getStoreConfig('carriers/'.$carrierCode, $store);
         if (!empty($carrierConfig)) {
@@ -93,7 +101,7 @@ class Mage_Shipping_Model_Config extends Varien_Object
      * @param mixed $store
      * @return Mage_Shipping_Model_Carrier_Abstract
      */
-    protected function _getCarrier($code, $config, $store=null)
+    protected function _getCarrier($code, $config, $store = null)
     {
 /*
         if (isset(self::$_carriers[$code])) {

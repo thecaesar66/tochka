@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Catalog
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -29,6 +29,6 @@
 $installer = $this;
 
 $installer->startSetup();
-$installer->removeAttribute('catalog_category', 'category_ids');
+$installer->removeAttribute('catalog_product', 'category_ids');
 $installer->getConnection()->dropColumn($installer->getTable('catalog/product'), 'category_ids');
 $installer->endSetup();

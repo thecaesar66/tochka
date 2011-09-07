@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Paypal
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -97,23 +97,22 @@ class Mage_Paypal_Model_Ipn
      */
     public function processIpnRequest(array $request, Zend_Http_Client_Adapter_Interface $httpAdapter = null)
     {
-        $this->_request = $request;
-        $this->_config = Mage::getModel('paypal/config'); // empty config model, without specific payment method
-        if (isset($request['test_ipn']) && 1 == $request['test_ipn']) {
-            $this->_config->sandboxFlag = true;
-        }
-        $this->_config->debug = true;
-
+        $this->_request   = $request;
         $this->_debugData = array('ipn' => $request);
         ksort($this->_debugData['ipn']);
 
         try {
-            if ($httpAdapter) {
-                $this->_postBack($httpAdapter);
-            }
             if (isset($this->_request['txn_type']) && 'recurring_payment' == $this->_request['txn_type']) {
+                $this->_getRecurringProfile();
+                if ($httpAdapter) {
+                    $this->_postBack($httpAdapter);
+                }
                 $this->_processRecurringProfile();
             } else {
+                $this->_getOrder();
+                if ($httpAdapter) {
+                    $this->_postBack($httpAdapter);
+                }
                 $this->_processOrder();
             }
         } catch (Exception $e) {
@@ -195,14 +194,19 @@ class Mage_Paypal_Model_Ipn
     {
         if (empty($this->_recurringProfile)) {
             // get proper recurring profile
-            $internalReferenceId = $this->_request['recurring_payment_id'];
-            $this->_recurringProfile = Mage::getModel('sales/recurring_profile')->loadByInternalReferenceId($internalReferenceId);
+            $internalReferenceId = $this->_request['rp_invoice_id'];
+            $this->_recurringProfile = Mage::getModel('sales/recurring_profile')
+                ->loadByInternalReferenceId($internalReferenceId);
             if (!$this->_recurringProfile->getId()) {
-                throw new Exception(sprintf('Wrong recurring profile INTERNAL_REFERENCE_ID: "%s".', $internalReferenceId));
+                throw new Exception(
+                    sprintf('Wrong recurring profile INTERNAL_REFERENCE_ID: "%s".', $internalReferenceId)
+                );
             }
             // re-initialize config with the method code and store id
             $methodCode = $this->_recurringProfile->getMethodCode();
-            $this->_config = Mage::getModel('paypal/config', array($methodCode, $this->_recurringProfile->getStoreId()));
+            $this->_config = Mage::getModel(
+                'paypal/config', array($methodCode, $this->_recurringProfile->getStoreId())
+            );
             if (!$this->_config->isMethodActive($methodCode) || !$this->_config->isMethodAvailable()) {
                 throw new Exception(sprintf('Method "%s" is not available.', $methodCode));
             }
@@ -214,7 +218,7 @@ class Mage_Paypal_Model_Ipn
      * Validate incoming request data, as PayPal recommends
      *
      * @throws Exception
-     * @see https://cms.paypal.com/cgi-bin/marketingweb?cmd=_render-content&content_ID=developer/e_howto_admin_IPNIntro
+     * @link https://cms.paypal.com/cgi-bin/marketingweb?cmd=_render-content&content_ID=developer/e_howto_admin_IPNIntro
      */
     protected function _verifyOrder()
     {
@@ -225,8 +229,12 @@ class Mage_Paypal_Model_Ipn
             if (!$receiverEmail) {
                 $receiverEmail = $this->getRequestData('receiver_email');
             }
-            if ($merchantEmail != $receiverEmail) {
-                throw new Exception(sprintf('Requested %s and configured %s merchant emails do not match.', $receiverEmail, $merchantEmail));
+            if (strtolower($merchantEmail) != strtolower($receiverEmail)) {
+                throw new Exception(
+                    sprintf(
+                        'Requested %s and configured %s merchant emails do not match.', $receiverEmail, $merchantEmail
+                    )
+                );
             }
         }
     }
@@ -336,9 +344,10 @@ class Mage_Paypal_Model_Ipn
     {
         $price = $this->getRequestData('mc_gross') - $this->getRequestData('tax') -  $this->getRequestData('shipping');
         $productItemInfo = new Varien_Object;
-        if ($this->getRequestData('period_type') == 'Trial') {
+        $type = trim($this->getRequestData('period_type'));
+        if ($type == 'Trial') {
             $productItemInfo->setPaymentType(Mage_Sales_Model_Recurring_Profile::PAYMENT_TYPE_TRIAL);
-        } elseif ($this->getRequestData('period_type') == 'Regular') {
+        } elseif ($type == 'Regular') {
             $productItemInfo->setPaymentType(Mage_Sales_Model_Recurring_Profile::PAYMENT_TYPE_REGULAR);
         }
         $productItemInfo->setTaxAmount($this->getRequestData('tax'));
@@ -370,6 +379,9 @@ class Mage_Paypal_Model_Ipn
      */
     protected function _registerPaymentCapture()
     {
+        if ($this->getRequestData('transaction_entity') == 'auth') {
+            return;
+        }
         $this->_importPaymentInformation();
         $payment = $this->_order->getPayment();
         $payment->setTransactionId($this->getRequestData('txn_id'))
@@ -381,7 +393,7 @@ class Mage_Paypal_Model_Ipn
         $this->_order->save();
 
         // notify customer
-        if ($invoice = $payment->getCreatedInvoice()) {
+        if ($invoice = $payment->getCreatedInvoice() && !$this->_order->getEmailSent()) {
             $comment = $this->_order->sendNewOrderEmail()->addStatusHistoryComment(
                     Mage::helper('paypal')->__('Notified customer about invoice #%s.', $invoice->getIncrementId())
                 )
@@ -511,6 +523,9 @@ class Mage_Paypal_Model_Ipn
             ->setParentTransactionId($this->getRequestData('parent_txn_id'))
             ->setIsTransactionClosed(0)
             ->registerAuthorizationNotification($this->getRequestData('mc_gross'));
+        if (!$this->_order->getEmailSent()) {
+            $this->_order->sendNewOrderEmail();
+        }
         $this->_order->save();
     }
 
@@ -521,10 +536,14 @@ class Mage_Paypal_Model_Ipn
     {
         $this->_importPaymentInformation();
 
+        $parentTxnId = $this->getRequestData('transaction_entity') == 'auth'
+            ? $this->getRequestData('txn_id') : $this->getRequestData('parent_txn_id');
+
         $this->_order->getPayment()
             ->setPreparedMessage($this->_createIpnComment(''))
-            ->setParentTransactionId($this->getRequestData('txn_id')) // this is the authorization transaction ID
+            ->setParentTransactionId($parentTxnId)
             ->registerVoidNotification();
+
         $this->_order->save();
     }
 

@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_SalesRule
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -34,11 +34,16 @@ class Mage_SalesRule_Model_Rule_Condition_Product_Found
         $this->setType('salesrule/rule_condition_product_found');
     }
 
+    /**
+     * Load value options
+     *
+     * @return Mage_SalesRule_Model_Rule_Condition_Product_Found
+     */
     public function loadValueOptions()
     {
         $this->setValueOption(array(
-            1=>'FOUND',
-            0=>'NOT FOUND',
+            1 => Mage::helper('salesrule')->__('FOUND'),
+            0 => Mage::helper('salesrule')->__('NOT FOUND')
         ));
         return $this;
     }

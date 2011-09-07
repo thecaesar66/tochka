@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Customer
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -38,6 +38,11 @@ class Mage_Customer_Helper_Data extends Mage_Core_Helper_Abstract
      * Query param name for last url visited
      */
     const REFERER_QUERY_PARAM_NAME = 'referer';
+
+    /**
+     * Config name for Redirect Customer to Account Dashboard after Logging in setting
+     */
+    const XML_PATH_CUSTOMER_STARTUP_REDIRECT_TO_DASHBOARD = 'customer/startup/redirect_dashboard';
 
     /**
      * Customer groups collection
@@ -129,9 +134,9 @@ class Mage_Customer_Helper_Data extends Mage_Core_Helper_Abstract
 
         $referer = $this->_getRequest()->getParam(self::REFERER_QUERY_PARAM_NAME);
 
-        if (!$referer && !Mage::getStoreConfigFlag('customer/startup/redirect_dashboard')) {
+        if (!$referer && !Mage::getStoreConfigFlag(self::XML_PATH_CUSTOMER_STARTUP_REDIRECT_TO_DASHBOARD)) {
             if (!Mage::getSingleton('customer/session')->getNoReferer()) {
-                $referer = Mage::getUrl('*/*/*', array('_current' => true));
+                $referer = Mage::getUrl('*/*/*', array('_current' => true, '_use_rewrite' => true));
                 $referer = Mage::helper('core')->urlEncode($referer);
             }
         }
@@ -151,7 +156,9 @@ class Mage_Customer_Helper_Data extends Mage_Core_Helper_Abstract
     {
         $params = array();
         if ($this->_getRequest()->getParam(self::REFERER_QUERY_PARAM_NAME)) {
-            $params = array(self::REFERER_QUERY_PARAM_NAME => $this->_getRequest()->getParam(self::REFERER_QUERY_PARAM_NAME));
+            $params = array(
+                self::REFERER_QUERY_PARAM_NAME => $this->_getRequest()->getParam(self::REFERER_QUERY_PARAM_NAME)
+            );
         }
         return $this->_getUrl('customer/account/loginPost', $params);
     }
@@ -267,5 +274,50 @@ class Mage_Customer_Helper_Data extends Mage_Core_Helper_Abstract
         $result = new Varien_Object(array('is_allowed' => true));
         Mage::dispatchEvent('customer_registration_is_allowed', array('result' => $result));
         return $result->getIsAllowed();
+    }
+
+    /**
+     * Retrieve name prefix dropdown options
+     *
+     * @return array|bool
+     */
+    public function getNamePrefixOptions($store = null)
+    {
+        return $this->_prepareNamePrefixSuffixOptions(
+            Mage::helper('customer/address')->getConfig('prefix_options', $store)
+        );
+    }
+
+    /**
+     * Retrieve name suffix dropdown options
+     *
+     * @return array|bool
+     */
+    public function getNameSuffixOptions($store = null)
+    {
+        return $this->_prepareNamePrefixSuffixOptions(
+            Mage::helper('customer/address')->getConfig('suffix_options', $store)
+        );
+    }
+
+    /**
+     * Unserialize and clear name prefix or suffix options
+     *
+     * @param string $options
+     * @return array|bool
+     */
+    protected function _prepareNamePrefixSuffixOptions($options)
+    {
+        $options = trim($options);
+        if (empty($options)) {
+            return false;
+        }
+        $result = array();
+        $options = explode(';', $options);
+        foreach ($options as $value) {
+            $value = $this->escapeHtml(trim($value));
+            $result[$value] = $value;
+        }
+        return $result;
     }
 }

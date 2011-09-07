@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Adminhtml
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -74,6 +74,7 @@ class Mage_Adminhtml_Catalog_CategoryController extends Mage_Adminhtml_Controlle
 
         Mage::register('category', $category);
         Mage::register('current_category', $category);
+        Mage::getSingleton('cms/wysiwyg_config')->setStoreId($this->getRequest()->getParam('store'));
         return $category;
     }
     /**
@@ -177,7 +178,7 @@ class Mage_Adminhtml_Catalog_CategoryController extends Mage_Adminhtml_Controlle
                 ->setLastEditedCategory($category->getId());
 //            $this->_initLayoutMessages('adminhtml/session');
             $this->loadLayout();
-            $this->getResponse()->setBody(Zend_Json::encode(array(
+            $this->getResponse()->setBody(Mage::helper('core')->jsonEncode(array(
                 'messages' => $this->getLayout()->getMessagesBlock()->getGroupedHtml(),
                 'content' =>
                     $this->getLayout()->getBlock('category.edit')->getFormHtml()
@@ -272,14 +273,6 @@ class Mage_Adminhtml_Catalog_CategoryController extends Mage_Adminhtml_Controlle
                 $parentCategory = Mage::getModel('catalog/category')->load($parentId);
                 $category->setPath($parentCategory->getPath());
             }
-            /**
-             * Check "Use Default Value" checkboxes values
-             */
-            if ($useDefaults = $this->getRequest()->getPost('use_default')) {
-                foreach ($useDefaults as $attributeCode) {
-                    $category->setData($attributeCode, false);
-                }
-            }
 
             /**
              * Process "Use Config Settings" checkboxes
@@ -313,7 +306,39 @@ class Mage_Adminhtml_Catalog_CategoryController extends Mage_Adminhtml_Controlle
                 'request' => $this->getRequest()
             ));
 
+            /**
+             * Proceed with $_POST['use_config']
+             * set into category model for proccessing through validation
+             */
+            $category->setData("use_post_data_config", $this->getRequest()->getPost('use_config'));
+
             try {
+                $validate = $category->validate();
+                if ($validate !== true) {
+                    foreach ($validate as $code => $error) {
+                        if ($error === true) {
+                            Mage::throwException(Mage::helper('catalog')->__('Attribute "%s" is required.', $category->getResource()->getAttribute($code)->getFrontend()->getLabel()));
+                        }
+                        else {
+                            Mage::throwException($error);
+                        }
+                    }
+                }
+
+                /**
+                 * Check "Use Default Value" checkboxes values
+                 */
+                if ($useDefaults = $this->getRequest()->getPost('use_default')) {
+                    foreach ($useDefaults as $attributeCode) {
+                        $category->setData($attributeCode, false);
+                    }
+                }
+
+                /**
+                 * Unset $_POST['use_config'] before save
+                 */
+                $category->unsetData('use_post_data_config');
+
                 $category->save();
                 Mage::getSingleton('adminhtml/session')->addSuccess(Mage::helper('catalog')->__('The category has been saved.'));
                 $refreshTree = 'true';
@@ -392,16 +417,29 @@ class Mage_Adminhtml_Catalog_CategoryController extends Mage_Adminhtml_Controlle
         $this->getResponse()->setRedirect($this->getUrl('*/*/', array('_current'=>true, 'id'=>null)));
     }
 
+    /**
+     * Grid Action
+     * Display list of products related to current category
+     *
+     * @return void
+     */
     public function gridAction()
     {
         if (!$category = $this->_initCategory(true)) {
             return;
         }
         $this->getResponse()->setBody(
-            $this->getLayout()->createBlock('adminhtml/catalog_category_tab_product')->toHtml()
+            $this->getLayout()->createBlock('adminhtml/catalog_category_tab_product', 'category.product.grid')
+                ->toHtml()
         );
     }
 
+    /**
+     * Tree Action
+     * Retrieve category tree
+     *
+     * @return void
+     */
     public function treeAction()
     {
         $storeId = (int) $this->getRequest()->getParam('store');
@@ -449,6 +487,11 @@ class Mage_Adminhtml_Catalog_CategoryController extends Mage_Adminhtml_Controlle
         }
     }
 
+    /**
+     * Check if admin has permissions to visit related pages
+     *
+     * @return boolean
+     */
     protected function _isAllowed()
     {
         return Mage::getSingleton('admin/session')->isAllowed('catalog/categories');

@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Customer
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -31,26 +31,32 @@
  * @package    Mage_Customer
  * @author     Magento Core Team <core@magentocommerce.com>
  */
-class Mage_Customer_Model_Attribute extends Mage_Eav_Model_Entity_Attribute
+class Mage_Customer_Model_Attribute extends Mage_Eav_Model_Attribute
 {
+    /**
+     * Name of the module
+     */
     const MODULE_NAME = 'Mage_Customer';
 
+    /**
+     * Prefix of model events names
+     *
+     * @var string
+     */
     protected $_eventPrefix = 'customer_entity_attribute';
+
+    /**
+     * Prefix of model events object
+     *
+     * @var string
+     */
     protected $_eventObject = 'attribute';
 
+    /**
+     * Init resource model
+     */
     protected function _construct()
     {
         $this->_init('customer/attribute');
-    }
-
-    /**
-     * Processing object after save data
-     *
-     * @return Mage_Core_Model_Abstract
-     */
-    protected function _afterSave()
-    {
-        Mage::getSingleton('eav/config')->clear();
-        return parent::_afterSave();
     }
 }

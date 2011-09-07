@@ -20,15 +20,24 @@
  *
  * @category    Mage
  * @package     Mage_CatalogSearch
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
  * Catalog advanced search model
  *
- * @category   Mage
- * @package    Mage_CatalogSearch
+ * @method Mage_CatalogSearch_Model_Resource_Fulltext _getResource()
+ * @method Mage_CatalogSearch_Model_Resource_Fulltext getResource()
+ * @method int getProductId()
+ * @method Mage_CatalogSearch_Model_Fulltext setProductId(int $value)
+ * @method int getStoreId()
+ * @method Mage_CatalogSearch_Model_Fulltext setStoreId(int $value)
+ * @method string getDataIndex()
+ * @method Mage_CatalogSearch_Model_Fulltext setDataIndex(string $value)
+ *
+ * @category    Mage
+ * @package     Mage_CatalogSearch
  * @author      Magento Core Team <core@magentocommerce.com>
  */
 class Mage_CatalogSearch_Model_Fulltext extends Mage_Core_Model_Abstract
@@ -53,12 +62,12 @@ class Mage_CatalogSearch_Model_Fulltext extends Mage_Core_Model_Abstract
      * (null, 2)    => Regenerate index for all store views of product Id=2
      *
      * @param int $storeId Store View Id
-     * @param int $productId Product Entity Id
+     * @param int | array $productId Product Entity Id
      * @return Mage_CatalogSearch_Model_Fulltext
      */
-    public function rebuildIndex($storeId = null, $productId = null)
+    public function rebuildIndex($storeId = null, $productIds = null)
     {
-        $this->getResource()->rebuildIndex($storeId, $productId);
+        $this->getResource()->rebuildIndex($storeId, $productIds);
         return $this;
     }
 
@@ -120,5 +129,18 @@ class Mage_CatalogSearch_Model_Fulltext extends Mage_Core_Model_Abstract
     public function getSearchType($storeId = null)
     {
         return Mage::getStoreConfig(self::XML_PATH_CATALOG_SEARCH_TYPE, $storeId);
+    }
+
+    /**
+     * Update category'es products indexes
+     *
+     * @param array $productIds
+     * @param array $categoryIds
+     * @return Mage_CatalogSearch_Model_Fulltext
+     */
+    public function updateCategoryIndex($productIds, $categoryIds)
+    {
+        $this->getResource()->updateCategoryIndex($productIds, $categoryIds);
+        return $this;
     }
 }

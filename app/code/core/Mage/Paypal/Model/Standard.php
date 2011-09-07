@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Paypal
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -123,6 +123,7 @@ class Mage_Paypal_Model_Standard extends Mage_Payment_Model_Method_Abstract
         $api->setOrderId($orderIncrementId)
             ->setCurrencyCode($order->getBaseCurrencyCode())
             //->setPaymentAction()
+            ->setOrder($order)
             ->setNotifyUrl(Mage::getUrl('paypal/ipn/'))
             ->setReturnUrl(Mage::getUrl('paypal/standard/success'))
             ->setCancelUrl(Mage::getUrl('paypal/standard/cancel'));
@@ -132,25 +133,15 @@ class Mage_Paypal_Model_Standard extends Mage_Payment_Model_Method_Abstract
         $address = $isOrderVirtual ? $order->getBillingAddress() : $order->getShippingAddress();
         if ($isOrderVirtual) {
             $api->setNoShipping(true);
-        }
-        elseif ($address->getEmail()) {
+        } elseif ($address->validate()) {
             $api->setAddress($address);
         }
 
-        list($items, $totals, $discountAmount, $shippingAmount) = Mage::helper('paypal')->prepareLineItems($order, false, true);
-        // prepare line items if required in config
-        if ($this->_config->lineItemsEnabled) {
-            $api->setLineItems($items)->setLineItemTotals($totals)->setDiscountAmount($discountAmount);
-        }
-        // or values specific for aggregated order
-        else {
-            $grandTotal = $order->getBaseGrandTotal();
-            if (!$isOrderVirtual) {
-                $api->setShippingAmount($shippingAmount);
-                $grandTotal -= $shippingAmount;
-            }
-            $api->setAmount($grandTotal)->setCartSummary($this->_getAggregatedCartSummary());
-        }
+        // add cart totals and line items
+        $api->setPaypalCart(Mage::getModel('paypal/cart', array($order)))
+            ->setIsLineItemsEnabled($this->_config->lineItemsEnabled)
+        ;
+        $api->setCartSummary($this->_getAggregatedCartSummary());
 
         $result = $api->getStandardCheckoutRequest();
         return $result;
@@ -192,7 +183,7 @@ class Mage_Paypal_Model_Standard extends Mage_Payment_Model_Method_Abstract
      */
     public function isAvailable($quote = null)
     {
-        if ($this->getConfig()->isMethodAvailable() && parent::isAvailable($quote)) {
+        if (parent::isAvailable($quote) && $this->getConfig()->isMethodAvailable()) {
             return true;
         }
         return false;

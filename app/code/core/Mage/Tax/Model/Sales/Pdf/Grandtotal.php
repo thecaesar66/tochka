@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Tax
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -50,22 +50,25 @@ class Mage_Tax_Model_Sales_Pdf_Grandtotal extends Mage_Sales_Model_Order_Pdf_Tot
         $tax = $this->getOrder()->formatPriceTxt($this->getSource()->getTaxAmount());
         $fontSize = $this->getFontSize() ? $this->getFontSize() : 7;
 
-        $totals = array(
-            array(
-                'amount'    => $this->getAmountPrefix().$amountExclTax,
-                'label'     => Mage::helper('tax')->__('Grand Total (Excl. Tax)') . ':',
-                'font_size' => $fontSize
-            ),
-            array(
-                'amount'    => $this->getAmountPrefix().$tax,
-                'label'     => Mage::helper('tax')->__('Tax') . ':',
-                'font_size' => $fontSize
-            ),
-            array(
-                'amount'    => $this->getAmountPrefix().$amount,
-                'label'     => Mage::helper('tax')->__('Grand Total (Incl. Tax)') . ':',
-                'font_size' => $fontSize
-            ),
+        $totals = array(array(
+            'amount'    => $this->getAmountPrefix().$amountExclTax,
+            'label'     => Mage::helper('tax')->__('Grand Total (Excl. Tax)') . ':',
+            'font_size' => $fontSize
+        ));
+
+        if ($config->displaySalesFullSummary($store)) {
+           $totals = array_merge($totals, $this->getFullTaxInfo());
+        }
+
+        $totals[] = array(
+            'amount'    => $this->getAmountPrefix().$tax,
+            'label'     => Mage::helper('tax')->__('Tax') . ':',
+            'font_size' => $fontSize
+        );
+        $totals[] = array(
+            'amount'    => $this->getAmountPrefix().$amount,
+            'label'     => Mage::helper('tax')->__('Grand Total (Incl. Tax)') . ':',
+            'font_size' => $fontSize
         );
         return $totals;
     }

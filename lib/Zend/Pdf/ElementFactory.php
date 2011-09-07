@@ -14,9 +14,9 @@
  *
  * @category   Zend
  * @package    Zend_Pdf
- * @copyright  Copyright (c) 2005-2009 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
- * @version    $Id: ElementFactory.php 18993 2009-11-15 17:09:16Z alexander $
+ * @version    $Id: ElementFactory.php 22797 2010-08-06 15:02:12Z alexander $
  */
 
 
@@ -28,7 +28,7 @@
  * Responsibility is to log PDF changes
  *
  * @package    Zend_Pdf
- * @copyright  Copyright (c) 2005-2009 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
  */
 class Zend_Pdf_ElementFactory implements Zend_Pdf_ElementFactory_Interface
@@ -115,6 +115,16 @@ class Zend_Pdf_ElementFactory implements Zend_Pdf_ElementFactory_Interface
         $this->_removedObjects = new SplObjectStorage();
     }
 
+
+    /**
+     * Get factory
+     *
+     * @return Zend_Pdf_ElementFactory_Interface
+     */
+    public function getFactory()
+    {
+        return $this;
+    }
 
     /**
      * Factory generator

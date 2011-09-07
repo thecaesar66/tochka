@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Sales
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -133,6 +133,12 @@ class Mage_Sales_Model_Order_Api extends Mage_Sales_Model_Api_Resource
     {
         $order = $this->_initOrder($orderIncrementId);
 
+        if ($order->getGiftMessageId() > 0) {
+            $order->setGiftMessage(
+                Mage::getSingleton('giftmessage/message')->load($order->getGiftMessageId())->getMessage()
+            );
+        }
+
         $result = $this->_getAttributes($order, 'order');
 
         $result['shipping_address'] = $this->_getAttributes($order->getShippingAddress(), 'order_address');
@@ -140,6 +146,12 @@ class Mage_Sales_Model_Order_Api extends Mage_Sales_Model_Api_Resource
         $result['items'] = array();
 
         foreach ($order->getAllItems() as $item) {
+            if ($item->getGiftMessageId() > 0) {
+                $item->setGiftMessage(
+                    Mage::getSingleton('giftmessage/message')->load($item->getGiftMessageId())->getMessage()
+                );
+            }
+
             $result['items'][] = $this->_getAttributes($item, 'order_item');
         }
 

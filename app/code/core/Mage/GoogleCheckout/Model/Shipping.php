@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_GoogleCheckout
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -36,7 +36,7 @@ class Mage_GoogleCheckout_Model_Shipping extends Mage_Shipping_Model_Carrier_Abs
     protected $_code = 'googlecheckout';
 
     /**
-     * Enter description here...
+     * Collects rates for user request
      *
      * @param Mage_Shipping_Model_Rate_Request $data
      * @return Mage_Shipping_Model_Rate_Result
@@ -47,8 +47,30 @@ class Mage_GoogleCheckout_Model_Shipping extends Mage_Shipping_Model_Carrier_Abs
         return $this;
     }
 
+    /**
+     * Returns array(methodCode => methodName) of possible methods for this carrier
+     * Used to automatically show it in config and so on
+     *
+     * @return array
+     */
     public function getAllowedMethods()
     {
         return array();
+    }
+
+    /**
+     * Returns array(methodCode => methodName) of internally used methods.
+     * They are possible only as result of completing Google Checkout.
+     *
+     * @return array
+     */
+    public function getInternallyAllowedMethods()
+    {
+        return array(
+            'carrier'  => 'Carrier',
+            'merchant' => 'Merchant',
+            'flatrate' => 'Flat Rate',
+            'pickup'   => 'Pickup'
+        );
     }
 }

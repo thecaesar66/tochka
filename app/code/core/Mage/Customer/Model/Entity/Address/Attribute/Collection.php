@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Customer
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -28,42 +28,11 @@
 /**
  * Customer Address EAV additional attribute resource collection
  *
- * @category   Mage
- * @package    Mage_Customer
- * @author     Magento Core Team <core@magentocommerce.com>
+ * @category    Mage
+ * @package     Mage_Customer
+ * @author      Magento Core Team <core@magentocommerce.com>
  */
-class Mage_Customer_Model_Entity_Address_Attribute_Collection extends Mage_Eav_Model_Mysql4_Entity_Attribute_Collection
+class Mage_Customer_Model_Entity_Address_Attribute_Collection
+    extends Mage_Customer_Model_Resource_Address_Attribute_Collection
 {
-    protected function _initSelect()
-    {
-        $this->getSelect()->from(array('main_table' => $this->getResource()->getMainTable()))
-            ->where('main_table.entity_type_id=?', Mage::getModel('eav/entity')->setType('customer_address')->getTypeId())
-            ->join(
-                array('additional_table' => $this->getTable('customer/eav_attribute')),
-                'additional_table.attribute_id=main_table.attribute_id'
-            );
-        return $this;
-    }
-
-    /**
-     * Specify attribute entity type filter
-     *
-     * @param   int $typeId
-     * @return  Mage_Customer_Model_Entity_Address_Attribute_Collection
-     */
-    public function setEntityTypeFilter($typeId)
-    {
-        return $this;
-    }
-
-    /**
-     * Specify filter by "is_visible" field
-     *
-     * @return Mage_Customer_Model_Entity_Address_Attribute_Collection
-     */
-    public function addVisibleFilter()
-    {
-        $this->getSelect()->where('additional_table.is_visible=?', 1);
-        return $this;
-    }
 }

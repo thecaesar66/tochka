@@ -20,15 +20,23 @@
  *
  * @category    Mage
  * @package     Mage_Core
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
  * Store group model
  *
- * @category   Mage
- * @package    Mage_Core
+ * @method Mage_Core_Model_Resource_Store_Group _getResource()
+ * @method Mage_Core_Model_Resource_Store_Group getResource()
+ * @method Mage_Core_Model_Store_Group setWebsiteId(int $value)
+ * @method string getName()
+ * @method Mage_Core_Model_Store_Group setName(string $value)
+ * @method Mage_Core_Model_Store_Group setRootCategoryId(int $value)
+ * @method Mage_Core_Model_Store_Group setDefaultStoreId(int $value)
+ *
+ * @category    Mage
+ * @package     Mage_Core
  * @author      Magento Core Team <core@magentocommerce.com>
  */
 
@@ -210,7 +218,7 @@ class Mage_Core_Model_Store_Group extends Mage_Core_Model_Abstract
      */
     public function getDefaultStore()
     {
-        if (!$this->getDefaultStoreId()) {
+        if (!$this->hasDefaultStoreId()) {
             return false;
         }
         if (is_null($this->_stores)) {

@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Adminhtml
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -63,24 +63,24 @@ class Mage_Adminhtml_Block_Tag_Grid_Pending extends Mage_Adminhtml_Block_Widget_
         $baseUrl = $this->getUrl();
 
         $this->addColumn('name', array(
-            'header'    => Mage::helper('tag')->__('Tag'),
-            'index'     => 'name',
+            'header'        => Mage::helper('tag')->__('Tag'),
+            'index'         => 'name'
         ));
 
         $this->addColumn('products', array(
-            'header'    => Mage::helper('tag')->__('Products'),
-            'width'     => '140px',
-            'align'     => 'right',
-            'index'     => 'products',
-            'type'      => 'number',
+            'header'        => Mage::helper('tag')->__('Products'),
+            'width'         => '140px',
+            'align'         => 'right',
+            'index'         => 'products',
+            'type'          => 'number'
         ));
 
         $this->addColumn('customers', array(
-            'header'    => Mage::helper('tag')->__('Customers'),
-            'width'     => '140px',
-            'align'     => 'right',
-            'index'     => 'customers',
-            'type'      => 'number',
+            'header'        => Mage::helper('tag')->__('Customers'),
+            'width'         => '140px',
+            'align'         => 'right',
+            'index'         => 'customers',
+            'type'          => 'number'
         ));
 
         // Collection for stores filters

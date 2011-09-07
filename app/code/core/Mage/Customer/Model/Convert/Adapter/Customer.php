@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Customer
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -270,7 +270,7 @@ class Mage_Customer_Model_Convert_Adapter_Customer
 
     public function load()
     {
-        $addressType = $this->getVar('filter/addressType');
+        $addressType = $this->getVar('filter/adressType'); //error in key filter addressType
         if ($addressType=='both') {
            $addressType = array('default_billing','default_shipping');
         }
@@ -443,12 +443,12 @@ class Mage_Customer_Model_Convert_Adapter_Customer
             /**
              * Check customer group
              */
-            if (empty($importData['group_id']) || !isset($customerGroups[$importData['group_id']])) {
-                $value = isset($importData['group_id']) ? $importData['group_id'] : '';
-                $message = Mage::helper('catalog')->__('Skipping import row, the value "%s" is not valid for the "%s" field.', $value, 'group_id');
+            if (empty($importData['group']) || !isset($customerGroups[$importData['group']])) {
+                $value = isset($importData['group']) ? $importData['group'] : '';
+                $message = Mage::helper('catalog')->__('Skipping import row, the value "%s" is not valid for the "%s" field.', $value, 'group');
                 Mage::throwException($message);
             }
-            $customer->setGroupId($customerGroups[$importData['group_id']]);
+            $customer->setGroupId($customerGroups[$importData['group']]);
 
             foreach ($this->_requiredFields as $field) {
                 if (!isset($importData[$field])) {
@@ -470,13 +470,13 @@ class Mage_Customer_Model_Convert_Adapter_Customer
                 $customer->setPasswordHash($customer->hashPassword($customer->generatePassword(8)));
             }
         }
-        elseif (!empty($importData['group_id'])) {
+        elseif (!empty($importData['group'])) {
             $customerGroups = $this->getCustomerGroups();
             /**
              * Check customer group
              */
-            if (isset($customerGroups[$importData['group_id']])) {
-                $customer->setGroupId($customerGroups[$importData['group_id']]);
+            if (isset($customerGroups[$importData['group']])) {
+                $customer->setGroupId($customerGroups[$importData['group']]);
             }
         }
 

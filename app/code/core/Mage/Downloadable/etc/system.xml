@@ -21,7 +21,7 @@
  *
  * @category    Mage
  * @package     Mage_Downloadable
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
 -->
@@ -88,7 +88,7 @@
                             <show_in_website>1</show_in_website>
                             <show_in_store>0</show_in_store>
                         </links_target_new_window>
-                        <content_disposition translate="lable">
+                        <content_disposition translate="label">
                             <label>Use Content-Disposition</label>
                             <frontend_type>select</frontend_type>
                             <source_model>downloadable/system_config_source_contentdisposition</source_model>

@@ -15,8 +15,8 @@
  * @category   Zend
  * @package    Zend_Loader
  * @subpackage Autoloader
- * @copyright  Copyright (c) 2005-2009 Zend Technologies USA Inc. (http://www.zend.com)
- * @version    $Id: Autoloader.php 18951 2009-11-12 16:26:19Z alexander $
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
+ * @version    $Id: Autoloader.php 23161 2010-10-19 16:08:36Z matthew $
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
  */
 
@@ -29,7 +29,7 @@
  * @uses       Zend_Loader_Autoloader
  * @package    Zend_Loader
  * @subpackage Autoloader
- * @copyright  Copyright (c) 2005-2009 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
  */
 class Zend_Loader_Autoloader
@@ -120,14 +120,12 @@ class Zend_Loader_Autoloader
                 if ($autoloader->autoload($class)) {
                     return true;
                 }
-            } elseif (is_string($autoloader)) {
-                if ($autoloader($class)) {
+            } elseif (is_array($autoloader)) {
+                if (call_user_func($autoloader, $class)) {
                     return true;
                 }
-            } elseif (is_array($autoloader)) {
-                $object = array_shift($autoloader);
-                $method = array_shift($autoloader);
-                if (call_user_func(array($object, $method), $class)) {
+            } elseif (is_string($autoloader) || is_callable($autoloader)) {
+                if ($autoloader($class)) {
                     return true;
                 }
             }
@@ -562,7 +560,7 @@ class Zend_Loader_Autoloader
         $versionLen = strlen($version);
         $versions   = array();
         $dirs       = glob("$path/*", GLOB_ONLYDIR);
-        foreach ($dirs as $dir) {
+        foreach ((array) $dirs as $dir) {
             $dirName = substr($dir, strlen($path) + 1);
             if (!preg_match('/^(?:ZendFramework-)?(\d+\.\d+\.\d+((a|b|pl|pr|p|rc)\d+)?)(?:-minimal)?$/i', $dirName, $matches)) {
                 continue;

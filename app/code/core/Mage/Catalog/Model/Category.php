@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Catalog
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -96,11 +96,11 @@ class Mage_Catalog_Model_Category extends Mage_Catalog_Model_Abstract
      */
     private $_designAttributes  = array(
         'custom_design',
-        'custom_design_apply',
         'custom_design_from',
         'custom_design_to',
         'page_layout',
-        'custom_layout_update'
+        'custom_layout_update',
+        'custom_apply_to_products'
     );
 
     /**
@@ -196,6 +196,21 @@ class Mage_Catalog_Model_Category extends Mage_Catalog_Model_Abstract
             );
         }
 
+        if (!$this->getId()) {
+            Mage::throwException(
+                Mage::helper('catalog')->__('Category move operation is not possible: the current category was not found.')
+            );
+        } elseif ($parent->getId() == $this->getId()) {
+            Mage::throwException(
+                Mage::helper('catalog')->__('Category move operation is not possible: parent category is equal to child category.')
+            );
+        }
+
+        /**
+         * Setting affected category ids for third party engine index refresh
+        */
+        $this->setMovedCategoryId($this->getId());
+
         $eventParams = array(
             $this->_eventObject => $this,
             'parent'        => $parent,
@@ -220,7 +235,9 @@ class Mage_Catalog_Model_Category extends Mage_Catalog_Model_Abstract
             Mage::dispatchEvent('catalog_category_tree_move_after', $eventParams);
             $this->_getResource()->commit();
 
+            // Set data for indexer
             $this->setAffectedCategoryIds(array($this->getId(), $this->getParentId(), $parentId));
+
             $moveComplete = true;
         } catch (Exception $e) {
             $this->_getResource()->rollBack();
@@ -407,6 +424,7 @@ class Mage_Catalog_Model_Category extends Mage_Catalog_Model_Abstract
 
             if ($this->hasData('request_path') && $this->getRequestPath() != '') {
                 $this->setData('url', $this->getUrlInstance()->getDirectUrl($this->getRequestPath()));
+                Varien_Profiler::stop('REWRITE: '.__METHOD__);
                 return $this->getData('url');
             }
 
@@ -486,7 +504,8 @@ class Mage_Catalog_Model_Category extends Mage_Catalog_Model_Abstract
      */
     public function getUrlPath()
     {
-        if ($path = $this->getData('url_path')) {
+        $path = $this->getData('url_path');
+        if ($path) {
             return $path;
         }
 
@@ -509,7 +528,10 @@ class Mage_Catalog_Model_Category extends Mage_Catalog_Model_Abstract
      */
     public function getParentCategory()
     {
-        return Mage::getModel('catalog/category')->load($this->getParentId());
+        if (!$this->hasData('parent_category')) {
+            $this->setData('parent_category', Mage::getModel('catalog/category')->load($this->getParentId()));
+        }
+        return $this->_getData('parent_category');
     }
 
     /**
@@ -574,7 +596,7 @@ class Mage_Catalog_Model_Category extends Mage_Catalog_Model_Abstract
         }
         else {
             $attribute = Mage::getSingleton('catalog/config')
-                ->getAttribute('catalog_category', $attributeCode);
+                ->getAttribute(self::ENTITY, $attributeCode);
         }
         return $attribute;
     }
@@ -582,7 +604,7 @@ class Mage_Catalog_Model_Category extends Mage_Catalog_Model_Abstract
     /**
      * Get all children categories IDs
      *
-     * @param boolean $asArray return resul as array instead of comma-separated list of IDs
+     * @param boolean $asArray return result as array instead of comma-separated list of IDs
      * @return array|string
      */
     public function getAllChildren($asArray = false)
@@ -817,6 +839,16 @@ class Mage_Catalog_Model_Category extends Mage_Catalog_Model_Abstract
     public function getChildrenCategories()
     {
         return $this->getResource()->getChildrenCategories($this);
+    }
+
+    /**
+     * Return parent category of current category with own custom design settings
+     *
+     * @return Mage_Catalog_Model_Category
+     */
+    public function getParentDesignCategory()
+    {
+        return $this->getResource()->getParentDesignCategory($this);
     }
 
     /**

@@ -20,11 +20,67 @@
  *
  * @category    Mage
  * @package     Mage_SalesRule
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
+/**
+ * SalesRule Model
+ *
+ * @method Mage_SalesRule_Model_Resource_Rule _getResource()
+ * @method Mage_SalesRule_Model_Resource_Rule getResource()
+ * @method string getName()
+ * @method Mage_SalesRule_Model_Rule setName(string $value)
+ * @method string getDescription()
+ * @method Mage_SalesRule_Model_Rule setDescription(string $value)
+ * @method string getFromDate()
+ * @method Mage_SalesRule_Model_Rule setFromDate(string $value)
+ * @method string getToDate()
+ * @method Mage_SalesRule_Model_Rule setToDate(string $value)
+ * @method int getUsesPerCustomer()
+ * @method Mage_SalesRule_Model_Rule setUsesPerCustomer(int $value)
+ * @method string getCustomerGroupIds()
+ * @method Mage_SalesRule_Model_Rule setCustomerGroupIds(string $value)
+ * @method int getIsActive()
+ * @method Mage_SalesRule_Model_Rule setIsActive(int $value)
+ * @method string getConditionsSerialized()
+ * @method Mage_SalesRule_Model_Rule setConditionsSerialized(string $value)
+ * @method string getActionsSerialized()
+ * @method Mage_SalesRule_Model_Rule setActionsSerialized(string $value)
+ * @method int getStopRulesProcessing()
+ * @method Mage_SalesRule_Model_Rule setStopRulesProcessing(int $value)
+ * @method int getIsAdvanced()
+ * @method Mage_SalesRule_Model_Rule setIsAdvanced(int $value)
+ * @method string getProductIds()
+ * @method Mage_SalesRule_Model_Rule setProductIds(string $value)
+ * @method int getSortOrder()
+ * @method Mage_SalesRule_Model_Rule setSortOrder(int $value)
+ * @method string getSimpleAction()
+ * @method Mage_SalesRule_Model_Rule setSimpleAction(string $value)
+ * @method float getDiscountAmount()
+ * @method Mage_SalesRule_Model_Rule setDiscountAmount(float $value)
+ * @method float getDiscountQty()
+ * @method Mage_SalesRule_Model_Rule setDiscountQty(float $value)
+ * @method int getDiscountStep()
+ * @method Mage_SalesRule_Model_Rule setDiscountStep(int $value)
+ * @method int getSimpleFreeShipping()
+ * @method Mage_SalesRule_Model_Rule setSimpleFreeShipping(int $value)
+ * @method int getApplyToShipping()
+ * @method Mage_SalesRule_Model_Rule setApplyToShipping(int $value)
+ * @method int getTimesUsed()
+ * @method Mage_SalesRule_Model_Rule setTimesUsed(int $value)
+ * @method int getIsRss()
+ * @method Mage_SalesRule_Model_Rule setIsRss(int $value)
+ * @method string getWebsiteIds()
+ * @method Mage_SalesRule_Model_Rule setWebsiteIds(string $value)
+ * @method int getCouponType()
+ * @method Mage_SalesRule_Model_Rule setCouponType(int $value)
+ *
+ * @category    Mage
+ * @package     Mage_SalesRule
+ * @author      Magento Core Team <core@magentocommerce.com>
+ */
 class Mage_SalesRule_Model_Rule extends Mage_Rule_Model_Rule
 {
     const FREE_SHIPPING_ITEM = 1;
@@ -33,6 +89,17 @@ class Mage_SalesRule_Model_Rule extends Mage_Rule_Model_Rule
     const COUPON_TYPE_NO_COUPON = 1;
     const COUPON_TYPE_SPECIFIC  = 2;
     const COUPON_TYPE_AUTO      = 3;
+
+    /**
+     * Rule type actions
+     */
+    const TO_PERCENT_ACTION = 'to_percent';
+    const BY_PERCENT_ACTION = 'by_percent';
+    const TO_FIXED_ACTION   = 'to_fixed';
+    const BY_FIXED_ACTION   = 'by_fixed';
+    const CART_FIXED_ACTION = 'cart_fixed';
+    const BUY_X_GET_Y_ACTION = 'buy_x_get_y';
+
 
     /**
      * @var Mage_SalesRule_Model_Coupon_CodegeneratorInterface
@@ -77,6 +144,13 @@ class Mage_SalesRule_Model_Rule extends Mage_Rule_Model_Rule
      * @var array
      */
     protected $_couponTypes;
+
+    /**
+     * Array of already validated addresses and validation results
+     *
+     * @var array
+     */
+    protected $_validatedAddresses = array();
 
     protected function _construct()
     {
@@ -206,7 +280,7 @@ class Mage_SalesRule_Model_Rule extends Mage_Rule_Model_Rule
     }
 
     /**
-     * Save rule labels after rule save
+     * Save rule labels after rule save and process product attributes used in actions and conditions
      *
      * @return Mage_SalesRule_Model_Rule
      */
@@ -225,6 +299,15 @@ class Mage_SalesRule_Model_Rule extends Mage_Rule_Model_Rule
                 ->save();
         } else {
             $this->getPrimaryCoupon()->delete();
+        }
+
+        //Saving attributes used in rule
+        $ruleProductAttributes = array_merge(
+            $this->_getUsedAttributes($this->getConditionsSerialized()),
+            $this->_getUsedAttributes($this->getActionsSerialized())
+        );
+        if (count($ruleProductAttributes)) {
+            $this->getResource()->setActualProductAttributes($this, $ruleProductAttributes);
         }
         return parent::_afterSave();
     }
@@ -294,7 +377,10 @@ class Mage_SalesRule_Model_Rule extends Mage_Rule_Model_Rule
                 Mage_SalesRule_Model_Rule::COUPON_TYPE_NO_COUPON => Mage::helper('salesrule')->__('No Coupon'),
                 Mage_SalesRule_Model_Rule::COUPON_TYPE_SPECIFIC  => Mage::helper('salesrule')->__('Specific Coupon'),
             );
-            $transport = new Varien_Object(array('coupon_types' => $this->_couponTypes, 'is_coupon_type_auto_visible' => false));
+            $transport = new Varien_Object(array(
+                    'coupon_types' => $this->_couponTypes,
+                    'is_coupon_type_auto_visible' => false
+            ));
             Mage::dispatchEvent('salesrule_rule_get_coupon_types', array('transport' => $transport));
             $this->_couponTypes = $transport->getCouponTypes();
             if ($transport->getIsCouponTypeAutoVisible()) {
@@ -339,7 +425,11 @@ class Mage_SalesRule_Model_Rule extends Mage_Rule_Model_Rule
                     if ($e instanceof Mage_Core_Exception || $coupon->getId()) {
                         throw $e;
                     }
-                    $coupon->setCode($couponCode . self::getCouponCodeGenerator()->getDelimiter() . sprintf('%04u', rand(0, 9999)));
+                    $coupon->setCode(
+                        $couponCode .
+                        self::getCouponCodeGenerator()->getDelimiter() .
+                        sprintf('%04u', rand(0, 9999))
+                    );
                     continue;
                 }
                 $ok = true;
@@ -351,5 +441,74 @@ class Mage_SalesRule_Model_Rule extends Mage_Rule_Model_Rule
         }
 
         return $coupon;
+    }
+
+    /**
+     * Return all product attributes used on serialized action or condition
+     *
+     * @param string $serializedString
+     * @return array
+     */
+    protected function _getUsedAttributes($serializedString)
+    {
+        $result = array();
+        if (preg_match_all('~s:32:"salesrule/rule_condition_product";s:9:"attribute";s:\d+:"(.*?)"~s',
+            $serializedString, $matches)){
+            foreach ($matches[1] as $offset => $attributeCode) {
+                $result[] = $attributeCode;
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * Check cached validation result for specific address
+     *
+     * @param   Mage_Sales_Model_Quote_Address $address
+     * @return  bool
+     */
+    public function hasIsValidForAddress($address)
+    {
+        $addressId = $this->_getAddressId($address);
+        return isset($this->_validatedAddresses[$addressId]) ? true : false;
+    }
+
+    /**
+     * Set validation result for specific address to results cache
+     *
+     * @param   Mage_Sales_Model_Quote_Address $address
+     * @param   bool $validationResult
+     * @return  Mage_SalesRule_Model_Rule
+     */
+    public function setIsValidForAddress($address, $validationResult)
+    {
+        $addressId = $this->_getAddressId($address);
+        $this->_validatedAddresses[$addressId] = $validationResult;
+        return $this;
+    }
+
+    /**
+     * Get cached validation result for specific address
+     *
+     * @param   Mage_Sales_Model_Quote_Address $address
+     * @return  bool
+     */
+    public function getIsValidForAddress($address)
+    {
+        $addressId = $this->_getAddressId($address);
+        return isset($this->_validatedAddresses[$addressId]) ? $this->_validatedAddresses[$addressId] : false;
+    }
+
+    /**
+     * Return id for address
+     *
+     * @param   Mage_Sales_Model_Quote_Address $address
+     * @return  string
+     */
+    private function _getAddressId($address) {
+        if($address instanceof Mage_Sales_Model_Quote_Address) {
+            return $address->getId();
+        }
+        return $address;
     }
 }

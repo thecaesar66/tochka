@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Adminhtml
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -37,7 +37,6 @@ class Mage_Adminhtml_Block_Newsletter_Queue_Grid_Renderer_Action extends Mage_Ad
     public function render(Varien_Object $row)
     {
         $actions = array();
-
 
         if($row->getQueueStatus()==Mage_Newsletter_Model_Queue::STATUS_NEVER) {
                if(!$row->getQueueStartAt() && $row->getSubscribersTotal()) {
@@ -69,13 +68,12 @@ class Mage_Adminhtml_Block_Newsletter_Queue_Grid_Renderer_Action extends Mage_Ad
         }
 
         $actions[] = array(
-            'url'		=>	$this->getUrl('*/newsletter_template/preview',array('id'=>$row->getTemplateId())),
+            'url'       =>  $this->getUrl('*/newsletter_queue/preview',array('id'=>$row->getId())),
             'caption'   =>  Mage::helper('newsletter')->__('Preview'),
-            'popup'	    =>	true
+            'popup'     =>  true
         );
 
         $this->getColumn()->setActions($actions);
         return parent::render($row);
     }
-
 }

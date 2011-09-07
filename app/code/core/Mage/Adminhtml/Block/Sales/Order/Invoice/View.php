@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Adminhtml
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -71,10 +71,13 @@ class Mage_Adminhtml_Block_Sales_Order_Invoice_View extends Mage_Adminhtml_Block
             ));
         }
 
+        $orderPayment = $this->getInvoice()->getOrder()->getPayment();
+
         if ($this->_isAllowedAction('creditmemo') && $this->getInvoice()->getOrder()->canCreditmemo()) {
-            if ($this->getInvoice()->getOrder()->getPayment()->canRefundPartialPerInvoice()
-                || !$this->getInvoice()->getIsUsedForRefund())
-            {
+            if (($orderPayment->canRefundPartialPerInvoice()
+                && $this->getInvoice()->canRefund()
+                && $orderPayment->getAmountPaid() > $orderPayment->getAmountRefunded())
+                || ($orderPayment->canRefund() && !$this->getInvoice()->getIsUsedForRefund())) {
                 $this->_addButton('capture', array( // capture?
                     'label'     => Mage::helper('sales')->__('Credit Memo'),
                     'class'     => 'go',

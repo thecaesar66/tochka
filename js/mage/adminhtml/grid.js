@@ -19,7 +19,7 @@
  *
  * @category    Mage
  * @package     Mage_Adminhtml
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
 var varienGrid = new Class.create();
@@ -184,11 +184,27 @@ varienGrid.prototype = {
                                 setLocation(response.ajaxRedirect);
                             }
                         } else {
-                            $(this.containerId).update(transport.responseText);
+                            /**
+                             * For IE <= 7.
+                             * If there are two elements, and first has name, that equals id of second.
+                             * In this case, IE will choose one that is above
+                             *
+                             * @see https://prototype.lighthouseapp.com/projects/8886/tickets/994-id-selector-finds-elements-by-name-attribute-in-ie7
+                             */
+                            var divId = $(this.containerId);
+                            if (divId.id == this.containerId) {
+                                divId.update(transport.responseText);
+                            } else {
+                                $$('div[id="'+this.containerId+'"]')[0].update(transport.responseText);
+                            }
                         }
-                    }
-                    catch (e) {
-                        $(this.containerId).update(transport.responseText);
+                    } catch (e) {
+                        var divId = $(this.containerId);
+                        if (divId.id == this.containerId) {
+                            divId.update(transport.responseText);
+                        } else {
+                            $$('div[id="'+this.containerId+'"]')[0].update(transport.responseText);
+                        }
                     }
                 }.bind(this)
             });
@@ -356,13 +372,34 @@ varienGridMassaction.prototype = {
     },
     initMassactionElements: function() {
         this.container      = $(this.containerId);
-        this.form           = $(this.containerId + '-form');
         this.count          = $(this.containerId + '-count');
-        this.validator      = new Validation(this.form);
         this.formHiddens    = $(this.containerId + '-form-hiddens');
         this.formAdditional = $(this.containerId + '-form-additional');
         this.select         = $(this.containerId + '-select');
+        this.form           = this.prepareForm();
+        this.validator      = new Validation(this.form);
         this.select.observe('change', this.onSelectChange.bindAsEventListener(this));
+    },
+    prepareForm: function() {
+        var form = $(this.containerId + '-form'), formPlace = null,
+            formElement = this.formHiddens || this.formAdditional;
+
+        if (!formElement) {
+            formElement = this.container.getElementsByTagName('button')[0];
+            formElement && formElement.parentNode;
+        }
+        if (!form && formElement) {
+            /* fix problem with rendering form in FF through innerHTML property */
+            form = document.createElement('form');
+            form.setAttribute('method', 'post');
+            form.setAttribute('action', '');
+            form.id = this.containerId + '-form';
+            formPlace = formElement.parentNode.parentNode;
+            formPlace.parentNode.appendChild(form);
+            form.appendChild(formPlace);
+        }
+
+        return form;
     },
     setGridIds: function(gridIds) {
         this.gridIds = gridIds;
@@ -748,7 +785,7 @@ serializerController.prototype = {
         var isInput   = Event.element(event).tagName == 'INPUT';
         if(trElement){
             var checkbox = Element.select(trElement, 'input');
-            if(checkbox[0]){
+            if(checkbox[0] && !checkbox[0].disabled){
                 var checked = isInput ? checkbox[0].checked : !checkbox[0].checked;
                 this.grid.setCheckboxChecked(checkbox[0], checked);
             }
@@ -765,8 +802,8 @@ serializerController.prototype = {
     rowInit : function(grid, row) {
         if(this.multidimensionalMode){
             var checkbox = $(row).select('.checkbox')[0];
-            var selectors = this.inputsToManage.map(function (name) { return 'input[name="' + name + '"]' });
-            var inputs = $(row).select.apply($(row), selectors);
+            var selectors = this.inputsToManage.map(function (name) { return ['input[name="' + name + '"]', 'select[name="' + name + '"]']; });
+            var inputs = $(row).select.apply($(row), selectors.flatten());
             if(checkbox && inputs.length > 0) {
                 checkbox.inputElements = inputs;
                 for(var i = 0; i < inputs.length; i++) {

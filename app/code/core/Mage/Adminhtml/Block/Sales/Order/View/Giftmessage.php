@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Adminhtml
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -41,6 +41,16 @@ class Mage_Adminhtml_Block_Sales_Order_View_Giftmessage extends Mage_Adminhtml_B
     protected $_entity;
 
     /**
+     * Retrieve order model instance
+     *
+     * @return Mage_Sales_Model_Order
+     */
+    public function getOrder()
+    {
+        return Mage::registry('current_order');
+    }
+
+    /**
      * Giftmessage object
      *
      * @var Mage_GiftMessage_Model_Message
@@ -49,7 +59,7 @@ class Mage_Adminhtml_Block_Sales_Order_View_Giftmessage extends Mage_Adminhtml_B
 
     protected function _beforeToHtml()
     {
-        if ($this->getParentBlock() && ($order = $this->getParentBlock()->getOrder())) {
+        if ($this->getParentBlock() && ($order = $this->getOrder())) {
             $this->setEntity($order);
         }
         parent::_beforeToHtml();

@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Paypal
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -66,6 +66,9 @@ class Mage_Paypal_Block_Adminhtml_System_Config_ApiWizard extends Mage_Adminhtml
             'button_label' => Mage::helper('paypal')->__($originalData['button_label']),
             'button_url'   => $originalData['button_url'],
             'html_id' => $element->getHtmlId(),
+            'sandbox_button_label' => Mage::helper('paypal')->__($originalData['sandbox_button_label']),
+            'sandbox_button_url'   => $originalData['sandbox_button_url'],
+            'sandbox_html_id' => 'sandbox_' . $element->getHtmlId(),
         ));
         return $this->_toHtml();
     }

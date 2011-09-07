@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Adminhtml
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -128,6 +128,12 @@ class Mage_Adminhtml_Sales_OrderController extends Mage_Adminhtml_Controller_Act
         if ($order = $this->_initOrder()) {
             try {
                 $order->sendNewOrderEmail();
+                $historyItem = Mage::getResourceModel('sales/order_status_history_collection')
+                    ->getUnnotifiedForInstance($order, Mage_Sales_Model_Order::HISTORY_ENTITY_NAME);
+                if ($historyItem) {
+                    $historyItem->setIsCustomerNotified(1);
+                    $historyItem->save();
+                }
                 $this->_getSession()->addSuccess($this->__('The order email has been sent.'));
             } catch (Mage_Core_Exception $e) {
                 $this->_getSession()->addError($e->getMessage());
@@ -447,6 +453,9 @@ class Mage_Adminhtml_Sales_OrderController extends Mage_Adminhtml_Controller_Act
         $document = $this->getRequest()->getPost('document');
     }
 
+    /**
+     * Print invoices for selected orders
+     */
     public function pdfinvoicesAction(){
         $orderIds = $this->getRequest()->getPost('order_ids');
         $flag = false;
@@ -466,17 +475,21 @@ class Mage_Adminhtml_Sales_OrderController extends Mage_Adminhtml_Controller_Act
                 }
             }
             if ($flag) {
-                return $this->_prepareDownloadResponse('invoice'.Mage::getSingleton('core/date')->date('Y-m-d_H-i-s').'.pdf', $pdf->render(), 'application/pdf');
+                return $this->_prepareDownloadResponse(
+                    'invoice'.Mage::getSingleton('core/date')->date('Y-m-d_H-i-s').'.pdf', $pdf->render(),
+                    'application/pdf'
+                );
             } else {
                 $this->_getSession()->addError($this->__('There are no printable documents related to selected orders.'));
                 $this->_redirect('*/*/');
             }
-
         }
         $this->_redirect('*/*/');
-
     }
 
+    /**
+     * Print shipments for selected orders
+     */
     public function pdfshipmentsAction(){
         $orderIds = $this->getRequest()->getPost('order_ids');
         $flag = false;
@@ -496,7 +509,10 @@ class Mage_Adminhtml_Sales_OrderController extends Mage_Adminhtml_Controller_Act
                 }
             }
             if ($flag) {
-                return $this->_prepareDownloadResponse('packingslip'.Mage::getSingleton('core/date')->date('Y-m-d_H-i-s').'.pdf', $pdf->render(), 'application/pdf');
+                return $this->_prepareDownloadResponse(
+                    'packingslip'.Mage::getSingleton('core/date')->date('Y-m-d_H-i-s').'.pdf', $pdf->render(),
+                    'application/pdf'
+                );
             } else {
                 $this->_getSession()->addError($this->__('There are no printable documents related to selected orders.'));
                 $this->_redirect('*/*/');
@@ -505,6 +521,9 @@ class Mage_Adminhtml_Sales_OrderController extends Mage_Adminhtml_Controller_Act
         $this->_redirect('*/*/');
     }
 
+    /**
+     * Print creditmemos for selected orders
+     */
     public function pdfcreditmemosAction(){
         $orderIds = $this->getRequest()->getPost('order_ids');
         $flag = false;
@@ -524,7 +543,10 @@ class Mage_Adminhtml_Sales_OrderController extends Mage_Adminhtml_Controller_Act
                 }
             }
             if ($flag) {
-                return $this->_prepareDownloadResponse('creditmemo'.Mage::getSingleton('core/date')->date('Y-m-d_H-i-s').'.pdf', $pdf->render(), 'application/pdf');
+                return $this->_prepareDownloadResponse(
+                    'creditmemo'.Mage::getSingleton('core/date')->date('Y-m-d_H-i-s').'.pdf', $pdf->render(),
+                    'application/pdf'
+                );
             } else {
                 $this->_getSession()->addError($this->__('There are no printable documents related to selected orders.'));
                 $this->_redirect('*/*/');
@@ -533,6 +555,9 @@ class Mage_Adminhtml_Sales_OrderController extends Mage_Adminhtml_Controller_Act
         $this->_redirect('*/*/');
     }
 
+    /**
+     * Print all documents for selected orders
+     */
     public function pdfdocsAction(){
         $orderIds = $this->getRequest()->getPost('order_ids');
         $flag = false;
@@ -578,7 +603,10 @@ class Mage_Adminhtml_Sales_OrderController extends Mage_Adminhtml_Controller_Act
                 }
             }
             if ($flag) {
-                return $this->_prepareDownloadResponse('docs'.Mage::getSingleton('core/date')->date('Y-m-d_H-i-s').'.pdf', $pdf->render(), 'application/pdf');
+                return $this->_prepareDownloadResponse(
+                    'docs'.Mage::getSingleton('core/date')->date('Y-m-d_H-i-s').'.pdf',
+                    $pdf->render(), 'application/pdf'
+                );
             } else {
                 $this->_getSession()->addError($this->__('There are no printable documents related to selected orders.'));
                 $this->_redirect('*/*/');
@@ -610,12 +638,45 @@ class Mage_Adminhtml_Sales_OrderController extends Mage_Adminhtml_Controller_Act
         $this->_redirect('*/*/view', array('order_id' => $order->getId()));
     }
 
+    /**
+     * Acl check for admin
+     *
+     * @return bool
+     */
     protected function _isAllowed()
     {
-        if ($this->getRequest()->getActionName() == 'view') {
-            return Mage::getSingleton('admin/session')->isAllowed('sales/order/actions/view');
+        $action = strtolower($this->getRequest()->getActionName());
+        switch ($action) {
+            case 'hold':
+                $aclResource = 'sales/order/actions/hold';
+                break;
+            case 'unhold':
+                $aclResource = 'sales/order/actions/unhold';
+                break;
+            case 'email':
+                $aclResource = 'sales/order/actions/email';
+                break;
+            case 'cancel':
+                $aclResource = 'sales/order/actions/cancel';
+                break;
+            case 'view':
+                $aclResource = 'sales/order/actions/view';
+                break;
+            case 'addcomment':
+                $aclResource = 'sales/order/actions/comment';
+                break;
+            case 'creditmemos':
+                $aclResource = 'sales/order/actions/creditmemo';
+                break;
+            case 'reviewpayment':
+                $aclResource = 'sales/order/actions/review_payment';
+                break;
+            default:
+                $aclResource = 'sales/order';
+                break;
+
         }
-        return Mage::getSingleton('admin/session')->isAllowed('sales/order');
+        return Mage::getSingleton('admin/session')->isAllowed($aclResource);
     }
 
     /**
@@ -647,5 +708,53 @@ class Mage_Adminhtml_Sales_OrderController extends Mage_Adminhtml_Controller_Act
         $this->_initOrder();
         $this->loadLayout(false);
         $this->renderLayout();
+    }
+
+    /**
+     * Edit order address form
+     */
+    public function addressAction()
+    {
+        $addressId = $this->getRequest()->getParam('address_id');
+        $address = Mage::getModel('sales/order_address')
+            ->getCollection()
+            ->getItemById($addressId);
+        if ($address) {
+            Mage::register('order_address', $address);
+            $this->loadLayout();
+            $this->renderLayout();
+        } else {
+            $this->_redirect('*/*/');
+        }
+    }
+
+    /**
+     * Save order address
+     */
+    public function addressSaveAction()
+    {
+        $addressId  = $this->getRequest()->getParam('address_id');
+        $address    = Mage::getModel('sales/order_address')->load($addressId);
+        $data       = $this->getRequest()->getPost();
+        if ($data && $address->getId()) {
+            $address->addData($data);
+            try {
+                $address->implodeStreetAddress()
+                    ->save();
+                $this->_getSession()->addSuccess(Mage::helper('sales')->__('The order address has been updated.'));
+                $this->_redirect('*/*/view', array('order_id'=>$address->getParentId()));
+                return;
+            } catch (Mage_Core_Exception $e) {
+                $this->_getSession()->addError($e->getMessage());
+            } catch (Exception $e) {
+                $this->_getSession()->addException(
+                    $e,
+                    Mage::helper('sales')->__('An error occurred while updating the order address. The address has not been changed.')
+                );
+            }
+            $this->_redirect('*/*/address', array('address_id'=>$address->getId()));
+        } else {
+            $this->_redirect('*/*/');
+        }
     }
 }

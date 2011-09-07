@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Paypal
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -59,10 +59,12 @@ class Mage_Paypal_Model_Payflowpro extends  Mage_Payment_Model_Method_Cc
     /**
      * Response codes
      */
-    const RESPONSE_CODE_APPROVED            = 0;
-    const RESPONSE_CODE_FRAUDSERVICE_FILTER = 126;
-    const RESPONSE_CODE_DECLINED            = 12;
-    const RESPONSE_CODE_CAPTURE_ERROR       = 111;
+    const RESPONSE_CODE_APPROVED                = 0;
+    const RESPONSE_CODE_FRAUDSERVICE_FILTER     = 126;
+    const RESPONSE_CODE_DECLINED                = 12;
+    const RESPONSE_CODE_DECLINED_BY_FILTER      = 125;
+    const RESPONSE_CODE_DECLINED_BY_MERCHANT    = 128;
+    const RESPONSE_CODE_CAPTURE_ERROR           = 111;
 
     /**
      * Payment method code
@@ -83,6 +85,7 @@ class Mage_Paypal_Model_Payflowpro extends  Mage_Payment_Model_Method_Cc
     protected $_canUseForMultishipping  = true;
     protected $_canSaveCc = false;
     protected $_isProxy = false;
+    protected $_canFetchTransactionInfo = true;
 
     /**
      * Gateway request timeout
@@ -119,7 +122,7 @@ class Mage_Paypal_Model_Payflowpro extends  Mage_Payment_Model_Method_Cc
     {
         $storeId = Mage::app()->getStore($this->getStore())->getId();
         $config = Mage::getModel('paypal/config')->setStoreId($storeId);
-        if ($config->isMethodAvailable($this->getCode()) && parent::isAvailable($quote)) {
+        if (parent::isAvailable($quote) && $config->isMethodAvailable($this->getCode())) {
             return true;
         }
         return false;
@@ -245,6 +248,7 @@ class Mage_Paypal_Model_Payflowpro extends  Mage_Payment_Model_Method_Cc
         $request = $this->_buildBasicRequest($payment);
         $request->setTrxtype(self::TRXTYPE_CREDIT);
         $request->setOrigid($payment->getParentTransactionId());
+        $request->setAmt(round($amount,2));
         $response = $this->_postRequest($request);
         $this->_processErrors($response);
 
@@ -253,6 +257,50 @@ class Mage_Paypal_Model_Payflowpro extends  Mage_Payment_Model_Method_Cc
                 ->setIsTransactionClosed(1);
         }
         return $this;
+    }
+
+    /**
+     * Fetch transaction details info
+     *
+     * @param Mage_Payment_Model_Info $payment
+     * @param string $transactionId
+     * @return array
+     */
+    public function fetchTransactionInfo(Mage_Payment_Model_Info $payment, $transactionId)
+    {
+        $request = $this->_buildBasicRequest($payment);
+        $request->setTrxtype(self::TRXTYPE_DELAYED_INQUIRY);
+        $request->setOrigid($transactionId);
+        $response = $this->_postRequest($request);
+
+        $this->_processErrors($response);
+
+        if (!$this->_isTransactionUnderReview($response->getOrigresult())) {
+            $payment->setTransactionId($response->getOrigpnref())
+                ->setIsTransactionClosed(0);
+            if ($response->getOrigresult() == self::RESPONSE_CODE_APPROVED) {
+                $payment->setIsTransactionApproved(true);
+            } else if ($response->getOrigresult() == self::RESPONSE_CODE_DECLINED_BY_MERCHANT) {
+                $payment->setIsTransactionDenied(true);
+            }
+        }
+
+        $rawData = $response->getData();
+        return ($rawData) ? $rawData : array();
+    }
+
+    /**
+     * Check whether the transaction is in payment review status
+     *
+     * @param string $statusCode
+     * @return bool
+     */
+    protected static function _isTransactionUnderReview($status)
+    {
+        if (in_array($status, array(self::RESPONSE_CODE_APPROVED, self::RESPONSE_CODE_DECLINED_BY_MERCHANT))) {
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -287,7 +335,9 @@ class Mage_Paypal_Model_Payflowpro extends  Mage_Payment_Model_Method_Cc
 
         $_isProxy = $this->getConfigData('use_proxy', false);
         if($_isProxy){
-            $_config['proxy'] = $this->getConfigData('proxy_host') . ':' . $this->getConfigData('proxy_port');//http://proxy.shr.secureserver.net:3128',
+            $_config['proxy'] = $this->getConfigData('proxy_host')
+                . ':'
+                . $this->getConfigData('proxy_port');//http://proxy.shr.secureserver.net:3128',
             $_config['httpproxytunnel'] = true;
             $_config['proxytype'] = CURLPROXY_HTTP;
         }
@@ -364,7 +414,7 @@ class Mage_Paypal_Model_Payflowpro extends  Mage_Payment_Model_Method_Cc
             if (!empty($billing)) {
                 $request->setFirstname($billing->getFirstname())
                     ->setLastname($billing->getLastname())
-                    ->setStreet($billing->getStreet(1))
+                    ->setStreet(implode(' ', $billing->getStreet()))
                     ->setCity($billing->getCity())
                     ->setState($billing->getRegionCode())
                     ->setZip($billing->getPostcode())
@@ -373,9 +423,10 @@ class Mage_Paypal_Model_Payflowpro extends  Mage_Payment_Model_Method_Cc
             }
             $shipping = $order->getShippingAddress();
             if (!empty($shipping)) {
+                $this->_applyCountryWorkarounds($shipping);
                 $request->setShiptofirstname($shipping->getFirstname())
                     ->setShiptolastname($shipping->getLastname())
-                    ->setShiptostreet($shipping->getStreet(1))
+                    ->setShiptostreet(implode(' ', $shipping->getStreet()))
                     ->setShiptocity($shipping->getCity())
                     ->setShiptostate($shipping->getRegionCode())
                     ->setShiptozip($shipping->getPostcode())
@@ -425,6 +476,20 @@ class Mage_Paypal_Model_Payflowpro extends  Mage_Payment_Model_Method_Cc
         if ($response->getResultCode() != self::RESPONSE_CODE_APPROVED
             && $response->getResultCode() != self::RESPONSE_CODE_FRAUDSERVICE_FILTER) {
             Mage::throwException($response->getRespmsg());
+        }
+    }
+
+    /**
+     * Adopt specified address object to be compatible with Paypal
+     * Puerto Rico should be as state of USA and not as a country
+     *
+     * @param Varien_Object $address
+     */
+    protected function _applyCountryWorkarounds(Varien_Object $address)
+    {
+        if ($address->getCountry() == 'PR') {
+            $address->setCountry('US');
+            $address->setRegionCode('PR');
         }
     }
 }

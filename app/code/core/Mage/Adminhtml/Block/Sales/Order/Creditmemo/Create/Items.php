@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Adminhtml
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -53,7 +53,7 @@ class Mage_Adminhtml_Block_Sales_Order_Creditmemo_Create_Items extends Mage_Admi
         );
 
         if ($this->getCreditmemo()->canRefund()) {
-            if ($this->getCreditmemo()->getInvoice()) {
+            if ($this->getCreditmemo()->getInvoice() && $this->getCreditmemo()->getInvoice()->getTransactionId()) {
                 $this->setChild(
                     'submit_button',
                     $this->getLayout()->createBlock('adminhtml/widget_button')->setData(array(
@@ -79,7 +79,7 @@ class Mage_Adminhtml_Block_Sales_Order_Creditmemo_Create_Items extends Mage_Admi
                 $this->getLayout()->createBlock('adminhtml/widget_button')->setData(array(
                     'label'     => Mage::helper('sales')->__('Refund Offline'),
                     'class'     => 'save submit-button',
-                    'onclick'   => 'disableElements(\'submit-button\');editForm.submit()',
+                    'onclick'   => 'disableElements(\'submit-button\');submitCreditMemoOffline()',
                 ))
             );
         }
@@ -147,8 +147,8 @@ class Mage_Adminhtml_Block_Sales_Order_Creditmemo_Create_Items extends Mage_Admi
 
     public function canEditQty()
     {
-        if ($this->getCreditmemo()->getOrder()->getPayment()->canCapture()) {
-            return $this->getCreditmemo()->getOrder()->getPayment()->canCapturePartial();
+        if ($this->getCreditmemo()->getOrder()->getPayment()->canRefund()) {
+            return $this->getCreditmemo()->getOrder()->getPayment()->canRefundPartialPerInvoice();
         }
         return true;
     }

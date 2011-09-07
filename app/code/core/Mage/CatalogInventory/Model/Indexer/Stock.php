@@ -20,13 +20,26 @@
  *
  * @category    Mage
  * @package     Mage_CatalogInventory
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
 /**
  * CatalogInventory Stock Status Indexer Model
+ *
+ * @method Mage_CatalogInventory_Model_Resource_Indexer_Stock _getResource()
+ * @method Mage_CatalogInventory_Model_Resource_Indexer_Stock getResource()
+ * @method int getProductId()
+ * @method Mage_CatalogInventory_Model_Indexer_Stock setProductId(int $value)
+ * @method int getWebsiteId()
+ * @method Mage_CatalogInventory_Model_Indexer_Stock setWebsiteId(int $value)
+ * @method int getStockId()
+ * @method Mage_CatalogInventory_Model_Indexer_Stock setStockId(int $value)
+ * @method float getQty()
+ * @method Mage_CatalogInventory_Model_Indexer_Stock setQty(float $value)
+ * @method int getStockStatus()
+ * @method Mage_CatalogInventory_Model_Indexer_Stock setStockStatus(int $value)
  *
  * @category    Mage
  * @package     Mage_CatalogInventory
@@ -248,25 +261,14 @@ class Mage_CatalogInventory_Model_Indexer_Stock extends Mage_Index_Model_Indexer
         /* @var $object Mage_CatalogInventory_Model_Stock_Item */
         $object      = $event->getDataObject();
 
-//        $properties = array(
-//            'manage_stock',
-//            'use_config_manage_stock',
-//            'is_in_stock'
-//        );
-
-//        $reindexStock = false;
-//        foreach ($properties as $property) {
-//            if ($event->dataHasChangedFor($property)) {
-//                $reindexStock = true;
-//                break;
-//            }
-//        }
-
         $event->addNewData('reindex_stock', 1);
         $event->addNewData('product_id', $object->getProductId());
 
-//        if ($reindexStock && !Mage::helper('cataloginventory')->isShowOutOfStock()) {
-//        }
+        // Saving stock item without product object
+        // Register re-index price process if products out of stock hidden on Front-end
+        if (!Mage::helper('cataloginventory')->isShowOutOfStock() && !$object->getProduct()) {
+            $event->addNewData('force_reindex_required', 1);
+        }
 
         return $this;
     }

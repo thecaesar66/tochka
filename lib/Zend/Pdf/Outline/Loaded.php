@@ -15,9 +15,9 @@
  * @category   Zend
  * @package    Zend_Pdf
  * @subpackage Actions
- * @copyright  Copyright (c) 2005-2009 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
- * @version    $Id$
+ * @version    $Id: Loaded.php 23195 2010-10-21 10:12:12Z alexander $
  */
 
 
@@ -39,7 +39,7 @@
  *
  * @package    Zend_Pdf
  * @subpackage Outlines
- * @copyright  Copyright (c) 2005-2009 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
  */
 class Zend_Pdf_Outline_Loaded extends Zend_Pdf_Outline
@@ -227,7 +227,7 @@ class Zend_Pdf_Outline_Loaded extends Zend_Pdf_Outline
      * Get outline target.
      *
      * @return Zend_Pdf_Target
-     * @thows Zend_Pdf_Exception
+     * @throws Zend_Pdf_Exception
      */
     public function getTarget()
     {
@@ -335,8 +335,11 @@ class Zend_Pdf_Outline_Loaded extends Zend_Pdf_Outline
             $childOutlinesCount = abs($childOutlinesCount);
 
             $childDictionary = $dictionary->First;
-            for ($count = 0; $count < $childOutlinesCount; $count++) {
-                if ($childDictionary === null) {
+
+            $children = new SplObjectStorage();
+            while ($childDictionary !== null) {
+                // Check children structure for cyclic references
+                if ($children->contains($childDictionary)) {
                     #require_once 'Zend/Pdf/Exception.php';
                     throw new Zend_Pdf_Exception('Outline childs load error.');
                 }
@@ -346,11 +349,6 @@ class Zend_Pdf_Outline_Loaded extends Zend_Pdf_Outline
                 }
 
                 $childDictionary = $childDictionary->Next;
-            }
-
-            if ($childDictionary !== null) {
-                #require_once 'Zend/Pdf/Exception.php';
-                throw new Zend_Pdf_Exception('Outline childs load error.');
             }
 
             $this->_originalChildOutlines = $this->childOutlines;

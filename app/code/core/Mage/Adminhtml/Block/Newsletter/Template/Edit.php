@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Adminhtml
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -326,5 +326,25 @@ class Mage_Adminhtml_Block_Newsletter_Template_Edit extends Mage_Adminhtml_Block
     public function getSaveAsFlag()
     {
         return $this->getRequest()->getParam('_save_as_flag') ? '1' : '';
+    }
+
+    /**
+     * Getter for single store mode check
+     *
+     * @return boolean
+     */
+    protected function isSingleStoreMode()
+    {
+        return Mage::app()->isSingleStoreMode();
+    }
+
+    /**
+     * Getter for id of current store (the only one in single-store mode and current in multi-stores mode)
+     *
+     * @return boolean
+     */
+    protected function getStoreId()
+    {
+        return Mage::app()->getStore(true)->getId();
     }
 }

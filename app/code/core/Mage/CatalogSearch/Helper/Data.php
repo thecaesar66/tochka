@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_CatalogSearch
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -61,6 +61,13 @@ class Mage_CatalogSearch_Helper_Data extends Mage_Core_Helper_Abstract
      * @var bool
      */
     protected $_isMaxLength = false;
+
+    /**
+     * Search engine model
+     *
+     * @var Mage_CatalogSearch_Model_Resource_Fulltext_Engine
+     */
+    protected $_engine;
 
     /**
      * Retrieve search query parameter name
@@ -146,7 +153,7 @@ class Mage_CatalogSearch_Helper_Data extends Mage_Core_Helper_Abstract
     /**
      * Retrieve suggest collection for query
      *
-     * @return Mage_CatalogSearch_Model_Mysql4_Query_Collection
+     * @return Mage_CatalogSearch_Model_Resource_Query_Collection
      */
     public function getSuggestCollection()
     {
@@ -175,7 +182,9 @@ class Mage_CatalogSearch_Helper_Data extends Mage_Core_Helper_Abstract
      */
     public function getSuggestUrl()
     {
-        return $this->_getUrl('catalogsearch/ajax/suggest');
+        return $this->_getUrl('catalogsearch/ajax/suggest', array(
+            '_secure' => Mage::app()->getFrontController()->getRequest()->isSecure()
+        ));
     }
 
     /**
@@ -326,23 +335,29 @@ class Mage_CatalogSearch_Helper_Data extends Mage_Core_Helper_Abstract
     /**
      * Get current search engine resource model
      *
-     * @return object|false
+     * @return object
      */
     public function getEngine()
     {
-//        $engine = (string)Mage::getConfig()->getNode('global/search/engine');
-        $engine = Mage::getStoreConfig('catalog/search/engine');
-        /**
-         * This needed if there already was saved in configuartion some none-default engine
-         * and module of that engine was disabled after that.
-         * Problem is in this engine in database configuration still set.
-         */
-        if ($engine && Mage::getConfig()->getResourceModelClassName($engine)) {
-            $model = Mage::getResourceSingleton($engine);
-            if ($model && $model->test()) {
-                return $model;
+        if (!$this->_engine) {
+            $engine = Mage::getStoreConfig('catalog/search/engine');
+
+            /**
+             * This needed if there already was saved in configuration some none-default engine
+             * and module of that engine was disabled after that.
+             * Problem is in this engine in database configuration still set.
+             */
+            if ($engine && Mage::getConfig()->getResourceModelClassName($engine)) {
+                $model = Mage::getResourceSingleton($engine);
+                if ($model && $model->test()) {
+                    $this->_engine = $model;
+                }
+            }
+            if (!$this->_engine) {
+                $this->_engine = Mage::getResourceSingleton('catalogsearch/fulltext_engine');
             }
         }
-        return Mage::getResourceSingleton('catalogsearch/fulltext_engine');
+
+        return $this->_engine;
     }
 }

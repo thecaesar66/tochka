@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Tax
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -50,7 +50,7 @@ class Mage_Tax_Model_Sales_Total_Quote_Subtotal extends Mage_Sales_Model_Quote_A
     protected $_baseSubtotal        = 0;
 
     /**
-     * Flag which is initialized when collect method is start.
+     * Flag which is initialized when collect method is started and catalog prices include tax.
      * Is used for checking if store tax and customer tax requests are similar
      *
      * @var bool
@@ -128,7 +128,7 @@ class Mage_Tax_Model_Sales_Total_Quote_Subtotal extends Mage_Sales_Model_Quote_A
         }
 
         foreach ($items as $item) {
-            if ($item->getParentItemId()) {
+            if ($item->getParentItem()) {
                 continue;
             }
             if ($item->getHasChildren() && $item->isChildrenCalculated()) {
@@ -179,11 +179,12 @@ class Mage_Tax_Model_Sales_Total_Quote_Subtotal extends Mage_Sales_Model_Quote_A
      */
     protected function _unitBaseCalculation($item, $request)
     {
-        $rate   = $this->_calculator->getRate($request->setProductClassId($item->getProduct()->getTaxClassId()));
+        $request->setProductClassId($item->getProduct()->getTaxClassId());
+        $rate   = $this->_calculator->getRate($request);
         $qty    = $item->getTotalQty();
 
-        $price          = $taxPrice         = $item->getCalculationPrice();
-        $basePrice      = $baseTaxPrice     = $item->getBaseCalculationPrice();
+        $price          = $taxPrice         = $item->getCalculationPriceOriginal();
+        $basePrice      = $baseTaxPrice     = $item->getBaseCalculationPriceOriginal();
         $subtotal       = $taxSubtotal      = $item->getRowTotal();
         $baseSubtotal   = $baseTaxSubtotal  = $item->getBaseRowTotal();
         $taxOnOrigPrice = !$this->_helper->applyTaxOnCustomPrice($this->_store) && $item->hasCustomPrice();
@@ -195,7 +196,7 @@ class Mage_Tax_Model_Sales_Total_Quote_Subtotal extends Mage_Sales_Model_Quote_A
 
         $item->setTaxPercent($rate);
         if ($this->_config->priceIncludesTax($this->_store)) {
-            if ($this->_areTaxRequestsSimilar) {
+            if ($this->_sameRateAsStore($request)) {
                 $tax            = $this->_calculator->calcTaxAmount($price, $rate, true);
                 $baseTax        = $this->_calculator->calcTaxAmount($basePrice, $rate, true);
                 $taxPrice       = $price;
@@ -256,12 +257,16 @@ class Mage_Tax_Model_Sales_Total_Quote_Subtotal extends Mage_Sales_Model_Quote_A
         }
 
         if ($item->hasCustomPrice()) {
+            /**
+             * Initialize item original price before declaring custom price
+             */
+            $item->getOriginalPrice();
             $item->setCustomPrice($price);
             $item->setBaseCustomPrice($basePrice);
         } else {
-            $item->setOriginalPrice($price);
+            $item->setConvertedPrice($price);
         }
-        $item->setPrice($basePrice);
+        $item->setPrice($price);
         $item->setBasePrice($basePrice);
         $item->setRowTotal($subtotal);
         $item->setBaseRowTotal($baseSubtotal);
@@ -288,11 +293,12 @@ class Mage_Tax_Model_Sales_Total_Quote_Subtotal extends Mage_Sales_Model_Quote_A
      */
     protected function _rowBaseCalculation($item, $request)
     {
-        $rate   = $this->_calculator->getRate($request->setProductClassId($item->getProduct()->getTaxClassId()));
+        $request->setProductClassId($item->getProduct()->getTaxClassId());
+        $rate   = $this->_calculator->getRate($request);
         $qty    = $item->getTotalQty();
 
-        $price          = $taxPrice         = $item->getCalculationPrice();
-        $basePrice      = $baseTaxPrice     = $item->getBaseCalculationPrice();
+        $price          = $taxPrice         = $item->getCalculationPriceOriginal();
+        $basePrice      = $baseTaxPrice     = $item->getBaseCalculationPriceOriginal();
         $subtotal       = $taxSubtotal      = $item->getRowTotal();
         $baseSubtotal   = $baseTaxSubtotal  = $item->getBaseRowTotal();
         $taxOnOrigPrice = !$this->_helper->applyTaxOnCustomPrice($this->_store) && $item->hasCustomPrice();
@@ -303,15 +309,15 @@ class Mage_Tax_Model_Sales_Total_Quote_Subtotal extends Mage_Sales_Model_Quote_A
 
         $item->setTaxPercent($rate);
         if ($this->_config->priceIncludesTax($this->_store)) {
-            if ($this->_areTaxRequestsSimilar) {
-                $rowTax         = $this->_calculator->calcTaxAmount($subtotal, $rate, true);
-                $baseRowTax     = $this->_calculator->calcTaxAmount($baseSubtotal, $rate, true);
+            if ($this->_sameRateAsStore($request)) {
+                $rowTax         = $this->_calculator->calcTaxAmount($subtotal, $rate, true, false);
+                $baseRowTax     = $this->_calculator->calcTaxAmount($baseSubtotal, $rate, true, false);
                 $taxPrice       = $price;
                 $baseTaxPrice   = $basePrice;
                 $taxSubtotal    = $subtotal;
                 $baseTaxSubtotal= $baseSubtotal;
-                $subtotal       = $subtotal - $rowTax;
-                $baseSubtotal   = $baseSubtotal - $baseRowTax;
+                $subtotal       = $this->_calculator->round($subtotal - $rowTax);
+                $baseSubtotal   = $this->_calculator->round($baseSubtotal - $baseRowTax);
                 $price          = $this->_calculator->round($subtotal/$qty);
                 $basePrice      = $this->_calculator->round($baseSubtotal/$qty);
                 if ($taxOnOrigPrice) {
@@ -331,8 +337,8 @@ class Mage_Tax_Model_Sales_Total_Quote_Subtotal extends Mage_Sales_Model_Quote_A
                 $price          = $this->_calculator->round($subtotal/$qty);
                 $basePrice      = $this->_calculator->round($baseSubtotal/$qty);
 
-                $rowTax         = $this->_calculator->calcTaxAmount($subtotal, $rate, false);
-                $baseRowTax     = $this->_calculator->calcTaxAmount($baseSubtotal, $rate, false);
+                $rowTax         = $this->_calculator->calcTaxAmount($subtotal, $rate, false, false);
+                $baseRowTax     = $this->_calculator->calcTaxAmount($baseSubtotal, $rate, false, false);
                 $taxSubtotal    = $subtotal + $rowTax;
                 $baseTaxSubtotal= $baseSubtotal + $baseRowTax;
                 $taxPrice       = $this->_calculator->round($taxSubtotal/$qty);
@@ -347,8 +353,8 @@ class Mage_Tax_Model_Sales_Total_Quote_Subtotal extends Mage_Sales_Model_Quote_A
                 $isPriceInclTax = false;
             }
         } else {
-            $rowTax     = $this->_calculator->calcTaxAmount($subtotal, $rate, false);
-            $baseRowTax = $this->_calculator->calcTaxAmount($baseSubtotal, $rate, false);
+            $rowTax     = $this->_calculator->calcTaxAmount($subtotal, $rate, false, false);
+            $baseRowTax = $this->_calculator->calcTaxAmount($baseSubtotal, $rate, false, false);
             $taxSubtotal    = $subtotal + $rowTax;
             $baseTaxSubtotal= $baseSubtotal + $baseRowTax;
             $taxPrice       = $this->_calculator->round($taxSubtotal/$qty);
@@ -364,12 +370,16 @@ class Mage_Tax_Model_Sales_Total_Quote_Subtotal extends Mage_Sales_Model_Quote_A
         }
 
         if ($item->hasCustomPrice()) {
+            /**
+             * Initialize item original price before declaring custom price
+             */
+            $item->getOriginalPrice();
             $item->setCustomPrice($price);
             $item->setBaseCustomPrice($basePrice);
         } else {
-            $item->setOriginalPrice($price);
+            $item->setConvertedPrice($price);
         }
-        $item->setPrice($basePrice);
+        $item->setPrice($price);
         $item->setBasePrice($basePrice);
         $item->setRowTotal($subtotal);
         $item->setBaseRowTotal($baseSubtotal);
@@ -401,13 +411,15 @@ class Mage_Tax_Model_Sales_Total_Quote_Subtotal extends Mage_Sales_Model_Quote_A
     protected function _totalBaseCalculation($item, $request)
     {
         $calc   = $this->_calculator;
-        $rate   = $calc->getRate($request->setProductClassId($item->getProduct()->getTaxClassId()));
+        $request->setProductClassId($item->getProduct()->getTaxClassId());
+        $rate   = $calc->getRate($request);
         $qty    = $item->getTotalQty();
 
-        $price          = $taxPrice         = $item->getCalculationPrice();
-        $basePrice      = $baseTaxPrice     = $item->getBaseCalculationPrice();
+        $price          = $taxPrice         = $item->getCalculationPriceOriginal();
+        $basePrice      = $baseTaxPrice     = $item->getBaseCalculationPriceOriginal();
         $subtotal       = $taxSubtotal      = $item->getRowTotal();
         $baseSubtotal   = $baseTaxSubtotal  = $item->getBaseRowTotal();
+
         $taxOnOrigPrice = !$this->_helper->applyTaxOnCustomPrice($this->_store) && $item->hasCustomPrice();
         if ($taxOnOrigPrice) {
             $origSubtotal       = $item->getOriginalPrice() * $qty;
@@ -415,71 +427,112 @@ class Mage_Tax_Model_Sales_Total_Quote_Subtotal extends Mage_Sales_Model_Quote_A
         }
         $item->setTaxPercent($rate);
         if ($this->_config->priceIncludesTax($this->_store)) {
-            if ($this->_areTaxRequestsSimilar) {
-                $rowTax         = $this->_deltaRound($calc->calcTaxAmount($subtotal, $rate, true, false), $rate, true);
-                $baseRowTax     = $this->_deltaRound($calc->calcTaxAmount($baseSubtotal, $rate, true, false), $rate, true, 'base');
-                $taxPrice       = $price;
-                $baseTaxPrice   = $basePrice;
-                $taxSubtotal    = $subtotal;
-                $baseTaxSubtotal= $baseSubtotal;
-                $subtotal       = $subtotal - $rowTax;
-                $baseSubtotal   = $baseSubtotal - $baseRowTax;
-                $price          = $calc->round($subtotal/$qty);
-                $basePrice      = $calc->round($baseSubtotal/$qty);
+            if ($this->_sameRateAsStore($request)) {
                 if ($taxOnOrigPrice) {
+                    $rowTax =
+                        $this->_deltaRound($calc->calcTaxAmount($origSubtotal, $rate, true, false), $rate, true);
+                    $baseRowTax =
+                        $this->_deltaRound(
+                            $calc->calcTaxAmount($baseOrigSubtotal, $rate, true, false), $rate, true, 'base'
+                        );
+
                     $taxable        = $origSubtotal;
                     $baseTaxable    = $baseOrigSubtotal;
                 } else {
-                    $taxable        = $taxSubtotal;
-                    $baseTaxable    = $baseTaxSubtotal;
-                }
-                $isPriceInclTax = true;
-            } else {
-                $storeRate      = $calc->getStoreRate($request, $this->_store);
-                $storeTax       = $calc->calcTaxAmount($subtotal, $storeRate, true, false);
-                $baseStoreTax   = $calc->calcTaxAmount($baseSubtotal, $storeRate, true, false);
-                $subtotal       = $calc->round($subtotal - $storeTax);
-                $baseSubtotal   = $calc->round($baseSubtotal - $baseStoreTax);
-                $price          = $calc->round($subtotal/$qty);
-                $basePrice      = $calc->round($baseSubtotal/$qty);
+                    $rowTax =
+                        $this->_deltaRound($calc->calcTaxAmount($subtotal, $rate, true, false), $rate, true);
+                    $baseRowTax =
+                        $this->_deltaRound(
+                            $calc->calcTaxAmount($baseSubtotal, $rate, true, false), $rate, true, 'base'
+                        );
 
-                $rowTax         = $this->_deltaRound($calc->calcTaxAmount($subtotal, $rate, false, false), $rate, true);
-                $baseRowTax     = $this->_deltaRound($calc->calcTaxAmount($baseSubtotal, $rate, false, false), $rate, true, 'base');
-                $taxSubtotal    = $subtotal + $rowTax;
-                $baseTaxSubtotal= $baseSubtotal + $baseRowTax;
-                $taxPrice       = $calc->round($taxSubtotal/$qty);
-                $baseTaxPrice   = $calc->round($baseTaxSubtotal/$qty);
-                if ($taxOnOrigPrice) {
-                    $taxable        = $calc->round($origSubtotal - $storeTax);
-                    $baseTaxable    = $calc->round($baseOrigSubtotal - $baseStoreTax);
-                } else {
                     $taxable        = $subtotal;
                     $baseTaxable    = $baseSubtotal;
                 }
+                $taxPrice       = $price;
+                $baseTaxPrice   = $basePrice;
+
+                $taxSubtotal    = $subtotal;
+                $baseTaxSubtotal= $baseSubtotal;
+
+                $subtotal       = $subtotal - $rowTax;
+                $baseSubtotal   = $baseSubtotal - $baseRowTax;
+
+                $price          = $calc->round($subtotal/$qty);
+                $basePrice      = $calc->round($baseSubtotal/$qty);
+
+                $isPriceInclTax = true;
+            } else {
+                $storeRate      = $calc->getStoreRate($request, $this->_store);
+                if ($taxOnOrigPrice) {
+                    $storeTax           = $calc->calcTaxAmount($origSubtotal, $storeRate, true, false);
+                    $baseStoreTax       = $calc->calcTaxAmount($baseOrigSubtotal, $storeRate, true, false);
+                } else {
+                    $storeTax           = $calc->calcTaxAmount($subtotal, $storeRate, true, false);
+                    $baseStoreTax       = $calc->calcTaxAmount($baseSubtotal, $storeRate, true, false);
+                }
+                $subtotal       = $calc->round($subtotal - $storeTax);
+                $baseSubtotal   = $calc->round($baseSubtotal - $baseStoreTax);
+
+                $price          = $calc->round($subtotal/$qty);
+                $basePrice      = $calc->round($baseSubtotal/$qty);
+
+                $rowTax =
+                    $this->_deltaRound($calc->calcTaxAmount($subtotal, $rate, false, false), $rate, true);
+                $baseRowTax =
+                    $this->_deltaRound(
+                        $calc->calcTaxAmount($baseSubtotal, $rate, false, false), $rate, true, 'base'
+                    );
+
+                $taxSubtotal    = $subtotal + $rowTax;
+                $baseTaxSubtotal= $baseSubtotal + $baseRowTax;
+
+                $taxPrice       = $calc->round($taxSubtotal/$qty);
+                $baseTaxPrice   = $calc->round($baseTaxSubtotal/$qty);
+
+                $taxable        = $subtotal;
+                $baseTaxable    = $baseSubtotal;
+
                 $isPriceInclTax = false;
             }
         } else {
-            $rowTax         = $this->_deltaRound($calc->calcTaxAmount($subtotal, $rate, false, false), $rate, true);
-            $baseRowTax     = $this->_deltaRound($calc->calcTaxAmount($baseSubtotal, $rate, false, false), $rate, true, 'base');
-            $taxSubtotal    = $subtotal + $rowTax;
-            $baseTaxSubtotal= $baseSubtotal + $baseRowTax;
-            $taxPrice       = $calc->round($taxSubtotal/$qty);
-            $baseTaxPrice   = $calc->round($baseTaxSubtotal/$qty);
             if ($taxOnOrigPrice) {
+                $rowTax =
+                    $this->_deltaRound($calc->calcTaxAmount($origSubtotal, $rate, false, false), $rate, true);
+                $baseRowTax =
+                    $this->_deltaRound(
+                        $calc->calcTaxAmount($baseOrigSubtotal, $rate, false, false), $rate, true, 'base'
+                    );
+
                 $taxable        = $origSubtotal;
                 $baseTaxable    = $baseOrigSubtotal;
             } else {
+                $rowTax         = $this->_deltaRound($calc->calcTaxAmount($subtotal, $rate, false, false), $rate, true);
+                $baseRowTax     =
+                    $this->_deltaRound($calc->calcTaxAmount($baseSubtotal, $rate, false, false), $rate, true, 'base');
+
                 $taxable        = $subtotal;
                 $baseTaxable    = $baseSubtotal;
             }
+
+            $taxSubtotal    = $subtotal + $rowTax;
+            $baseTaxSubtotal= $baseSubtotal + $baseRowTax;
+
+            $taxPrice       = $calc->round($taxSubtotal/$qty);
+            $baseTaxPrice   = $calc->round($baseTaxSubtotal/$qty);
+
             $isPriceInclTax = false;
         }
 
         if ($item->hasCustomPrice()) {
+            /**
+             * Initialize item original price before declaring custom price
+             */
+            $item->getOriginalPrice();
             $item->setCustomPrice($price);
             $item->setBaseCustomPrice($basePrice);
         } else {
-            $item->setOriginalPrice($price);
+            $item->setConvertedPrice($price);
         }
         $item->setPrice($basePrice);
         $item->setBasePrice($basePrice);
@@ -500,6 +553,27 @@ class Mage_Tax_Model_Sales_Total_Quote_Subtotal extends Mage_Sales_Model_Quote_A
             $item->setBaseDiscountCalculationPrice($baseSubtotal/$qty);
         }
         return $this;
+    }
+
+    /**
+     * Checks whether request for an item has same rate as store one
+     * Used only after collect() started, as far as uses optimized $_areTaxRequestsSimilar property
+     * Used only in case of prices including tax
+     *
+     * @param Varien_Object $request
+     * @return bool
+     */
+    protected function _sameRateAsStore($request)
+    {
+        // Maybe we know that all requests for currently collected items have same rates
+        if ($this->_areTaxRequestsSimilar) {
+            return true;
+        }
+
+        // Check current request individually
+        $rate = $this->_calculator->getRate($request);
+        $storeRate = $this->_calculator->getStoreRate($request, $this->_store);
+        return $rate == $storeRate;
     }
 
     /**
@@ -541,16 +615,16 @@ class Mage_Tax_Model_Sales_Total_Quote_Subtotal extends Mage_Sales_Model_Quote_A
         $rowTotalInclTax    = 0;
         $baseRowTotalInclTax= 0;
         foreach ($item->getChildren() as $child) {
-            $price              += $child->getOriginalPrice();
-            $basePrice          += $child->getBaseOriginalPrice();
+            $price              += $child->getPrice() * $child->getQty();
+            $basePrice          += $child->getBasePrice() * $child->getQty();
             $rowTotal           += $child->getRowTotal();
             $baseRowTotal       += $child->getBaseRowTotal();
-            $priceInclTax       += $child->getPriceInclTax();
-            $basePriceInclTax   += $child->getBasePriceInclTax();
+            $priceInclTax       += $child->getPriceInclTax() * $child->getQty();
+            $basePriceInclTax   += $child->getBasePriceInclTax() * $child->getQty();
             $rowTotalInclTax    += $child->getRowTotalInclTax();
             $baseRowTotalInclTax+= $child->getBaseRowTotalInclTax();
         }
-        $item->setOriginalPrice($price);
+        $item->setConvertedPrice($price);
         $item->setPrice($basePrice);
         $item->setRowTotal($rowTotal);
         $item->setBaseRowTotal($baseRowTotal);
@@ -587,7 +661,7 @@ class Mage_Tax_Model_Sales_Total_Quote_Subtotal extends Mage_Sales_Model_Quote_A
             $address,
             $address->getQuote()->getBillingAddress(),
             $address->getQuote()->getCustomerTaxClassId(),
-            $address->_store
+            $address->getQuote()->getStore()
         );
         return $addressTaxRequest;
     }
@@ -664,8 +738,8 @@ class Mage_Tax_Model_Sales_Total_Quote_Subtotal extends Mage_Sales_Model_Quote_A
         $rate   = $this->_calculator->getRate($request);
         $qty    = $item->getTotalQty();
 
-        $price          = $taxPrice         = $item->getCalculationPrice();
-        $basePrice      = $baseTaxPrice     = $item->getBaseCalculationPrice();
+        $price          = $taxPrice         = $item->getCalculationPriceOriginal();
+        $basePrice      = $baseTaxPrice     = $item->getBaseCalculationPriceOriginal();
         $subtotal       = $taxSubtotal      = $item->getRowTotal();
         $baseSubtotal   = $baseTaxSubtotal  = $item->getBaseRowTotal();
 

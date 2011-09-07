@@ -20,48 +20,19 @@
  *
  * @category    Mage
  * @package     Mage_Reports
- * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
+
 
 /**
  * Customers by totals Report collection
  *
- * @category   Mage
- * @package    Mage_Reports
+ * @category    Mage
+ * @package     Mage_Reports
  * @author      Magento Core Team <core@magentocommerce.com>
  */
-
-class Mage_Reports_Model_Mysql4_Customer_Totals_Collection extends Mage_Reports_Model_Mysql4_Order_Collection
+class Mage_Reports_Model_Mysql4_Customer_Totals_Collection
+    extends Mage_Reports_Model_Resource_Customer_Totals_Collection
 {
-    protected function _joinFields($from = '', $to = '')
-    {
-        $this->joinCustomerName()
-            ->groupByCustomer()
-            ->addOrdersCount()
-            ->addAttributeToFilter('created_at', array('from' => $from, 'to' => $to, 'datetime' => true));
-        return $this;
-    }
-
-    public function setDateRange($from, $to)
-    {
-        $this->_reset()
-            ->_joinFields($from, $to);
-        return $this;
-    }
-
-    public function setStoreIds($storeIds)
-    {
-        $vals = array_values($storeIds);
-        if (count($storeIds) >= 1 && $vals[0] != '') {
-            $this->addAttributeToFilter('store_id', array('in' => (array)$storeIds));
-            $this->addSumAvgTotals(1)
-                ->orderByTotalAmount();
-        } else {
-            $this->addSumAvgTotals()
-                ->orderByTotalAmount();
-        }
-
-        return $this;
-    }
 }
