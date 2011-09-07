@@ -1,3 +1,4 @@
 shared_writable_dirs: 
     - /app/etc
     - /errors
+    - /var
