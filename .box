@@ -13,3 +13,6 @@ php_extensions:
     - inconv
     - curl
     - soap
+    - mysqli
+    - mysql
+    - mbstring

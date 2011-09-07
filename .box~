@@ -1,2 +1,15 @@
-shared_writable_dirs: 
-    - /app/etc
+shared_writable_dirs:
+    - media
+    - var
+    - app/etc
+ 
+php_extensions:
+    - pdo_mysql
+    - simplexml
+    - mcrypt
+    - hash
+    - gd
+    - dom
+    - inconv
+    - curl
+    - soap
