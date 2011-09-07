@@ -1,1 +1,2 @@
-shared_writable_dirs: [/app/etc]
+shared_writable_dirs: 
+    - /app/etc
