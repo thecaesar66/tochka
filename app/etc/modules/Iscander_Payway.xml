@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<!-- 
+/**
+ * @category   Iscander
+ * @package    Iscander_Payway
+ * @author     Rajendra K Bhatta<rajen_k_bhtt@hotmail.com>
+ * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ */
+ -->
+<config>
+    <modules>
+        <Iscander_Payway>
+            <active>true</active>
+            <codePool>local</codePool>
+            <depends>
+                <Mage_Payment/>
+            </depends>
+        </Iscander_Payway>
+    </modules>
+</config> 
