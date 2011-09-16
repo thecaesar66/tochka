@@ -138,6 +138,7 @@ class Iscander_Payway_Model_Payway extends Mage_Payment_Model_Method_Abstract
         $form_fields['wsb_store']                       = $this->getConfigData('wsd_store');
         $form_fields['wsb_order_num']                   = $orderId;
         $form_fields['wsb_currency_id']                 = Mage::helper('payway')->getConfig('wsb_currency_id', 'BYR');
+        $form_fields['wsb_language_id']                 = 'russian';
         $form_fields['wsb_seed']                        = $time;
         $form_fields['wsb_signature']                   = md5($signature);
         $form_fields['wsb_return_url']                  = $this->getSuccessURL();
