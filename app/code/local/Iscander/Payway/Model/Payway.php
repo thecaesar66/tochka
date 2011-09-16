@@ -150,7 +150,7 @@ class Iscander_Payway_Model_Payway extends Mage_Payment_Model_Method_Abstract
             }
             $form_fields['wsb_invoice_item_name'][]     = $item->getName();
             $form_fields['wsb_invoice_item_quantity'][] = $item->getQtyToInvoice();
-            $form_fields['wsb_invoice_item_price'][]    = $item->getPrice();
+            $form_fields['wsb_invoice_item_price'][]    = round($item->getPrice());
         }
         $form_fields['wsb_total']                       = round($this->getOrder()->getBaseGrandTotal());
         
