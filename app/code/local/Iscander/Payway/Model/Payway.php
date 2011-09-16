@@ -128,9 +128,9 @@ class Iscander_Payway_Model_Payway extends Mage_Payment_Model_Method_Abstract
                      $orderId .
                      (int)!$this->getConfigData('mode') .
                      Mage::helper('payway')->getConfig('wsb_currency_id', 'BYR') .
-                     $this->getOrder()->getBaseGrandTotal().
+                     round($this->getOrder()->getBaseGrandTotal()).
                      $this->getConfigData('wsb_signature');
-                
+
         $form_fields = array();
         //prepare variables hidden form fields
         $form_fields['*scart']                          = '';
@@ -151,7 +151,7 @@ class Iscander_Payway_Model_Payway extends Mage_Payment_Model_Method_Abstract
             $form_fields['wsb_invoice_item_quantity'][] = $item->getQtyToInvoice();
             $form_fields['wsb_invoice_item_price'][]    = $item->getPrice();
         }
-        $form_fields['wsb_total']                       = $this->getOrder()->getBaseGrandTotal();
+        $form_fields['wsb_total']                       = round($this->getOrder()->getBaseGrandTotal());
         
         //Insert for debugging purposes
         if($this->getConfigData('debug_flag')){
