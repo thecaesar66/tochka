@@ -29,7 +29,7 @@ class Iscander_Payway_Block_Redirect extends Mage_Core_Block_Abstract
         }
 
         $html = '<html><body>';
-        $html.= $this->__('You will be redirected to PayWay in a few seconds.');
+        $html.= $this->__('Через несколько секунд Вы будете перенаправлены на страницу оплаты.');
         $html.= $form->toHtml();
 
         $html.= '<script type="text/javascript">document.getElementById("payway_payment_checkout").submit();</script>';

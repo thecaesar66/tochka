@@ -1,25 +1,17 @@
 <?php
 class Iscander_Payway_Model_Payway extends Mage_Payment_Model_Method_Abstract
 {
-    const PAYWAY_LIVE_URL       = 'https://secure.webpay.by:8843';
-    const PAYWAY_TEST_URL       = 'https://secure.sandbox.webpay.by:8843';
-    
-    protected $_code 			= 'payway';
-    protected $_formBlockType 	= 'payway/form';
-    protected $_infoBlockType 	= 'payway/info';
+    const PAYWAY_LIVE_URL       = 'https://secure.webpay.by';
+    const PAYWAY_TEST_URL       = 'https://secure.sandbox.webpay.by';
+    const PAYWAY_PORT           = '8843';
+
+    protected $_code            = 'payway';
+    protected $_formBlockType   = 'payway/form';
+    protected $_infoBlockType   = 'payway/info';
     
     public function canCapture()
     {
         return true;
-    }
-    
-    public function cleanString($string)
-    {
-        $string_step1 = strip_tags($string);
-        $string_step2 = nl2br($string_step1);
-        $string_step3 = str_replace("<br />","<br>",$string_step2);
-        $cleaned_string = str_replace("\""," inch",$string_step3);        
-        return $cleaned_string;
     }
     
     public function capture(Varien_Object $payment, $amount)
@@ -32,8 +24,8 @@ class Iscander_Payway_Model_Payway extends Mage_Payment_Model_Method_Abstract
 
     public function getIssuerUrls()
     {
-        return array("live" => self::PAYWAY_LIVE_URL,
-                     "test" => self::PAYWAY_TEST_URL);
+        return array("live" => self::PAYWAY_LIVE_URL . ':' . self::PAYWAY_PORT,
+                     "test" => self::PAYWAY_TEST_URL . ':' . self::PAYWAY_PORT);
 
     }
     
@@ -67,9 +59,9 @@ class Iscander_Payway_Model_Payway extends Mage_Payment_Model_Method_Abstract
         return Mage::getUrl('payway/process/cancel', array('_secure' => true));
     }
     
-    protected function getIpnURL()
+    protected function getNotifyURL()
     {
-        return Mage::getUrl('payway/process/ipn', array('_secure' => true));
+        return Mage::getUrl('payway/process/notify', array('_secure' => true));
     }
 
     public function getCustomer()
@@ -143,6 +135,7 @@ class Iscander_Payway_Model_Payway extends Mage_Payment_Model_Method_Abstract
         $form_fields['wsb_signature']                   = md5($signature);
         $form_fields['wsb_return_url']                  = $this->getSuccessURL();
         $form_fields['wsb_cancel_return_url']           = $this->getCancelURL();
+        $form_fields['wsb_notify_url']                  = $this->getNotifyURL();
         $form_fields['wsb_test']                        = (int)!$this->getConfigData('mode');
         foreach ($orderItems as $item) {
             if ($item->getParentItem()) {

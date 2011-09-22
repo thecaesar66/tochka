@@ -52,32 +52,11 @@
                 </args>
             </payway>
         </routers>
-    </frontend>      
-    <!--<adminhtml>-->
-        <!--<acl>-->
-            <!--<resources>-->
-                <!--<admin>-->
-                    <!--<children>-->
-                        <!--<system>-->
-                            <!--<children>-->
-                                <!--<config>-->
-                                    <!--<children>-->
-                                        <!--<payway>-->
-                                            <!--<title>Iscander Area</title>-->
-                                        <!--</payway>-->
-                                    <!--</children>-->
-                                <!--</config>-->
-                            <!--</children>-->
-                        <!--</system>-->
-                    <!--</children>-->
-                <!--</admin>-->
-            <!--</resources>-->
-        <!--</acl>-->
-    <!--</adminhtml> -->
+    </frontend>
     <default>
         <payment>
             <payway>
-                <active>1</active>				
+                <active>1</active>
                	<model>payway/payway</model>
                	<title>WebPay</title>
                 <wsd_storeid>377914715</wsd_storeid>
@@ -86,7 +65,9 @@
                 <debug_flag>1</debug_flag>
                 <wsb_currency_id>BYR</wsb_currency_id>
                 <wsb_signature>392f4f772e</wsb_signature>
+                <user_name>gip.by</user_name>
+                <password>BNIdCv8pQg</password>
             </payway>
         </payment>
-    </default>	   
+    </default>
 </config>

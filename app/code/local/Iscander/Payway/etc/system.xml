@@ -1,25 +1,7 @@
 <?xml version="1.0"?>
 <config>   
     <sections>
-        <!--<payway module="payway">-->
-            <!--<label>PayWay</label>-->
-            <!--<tab>magepychoall</tab>-->
-            <!--<frontend_type>text</frontend_type>-->
-            <!--<sort_order>20</sort_order>-->
-            <!--<show_in_default>1</show_in_default>-->
-            <!--<show_in_website>1</show_in_website>-->
-            <!--<show_in_store>1</show_in_store>-->
-            <!--<groups>-->
-                <!--<info>-->
-                    <!--<frontend_model>payway/system_config_info</frontend_model>-->
-                    <!--<sort_order>0</sort_order>-->
-                    <!--<show_in_default>1</show_in_default>-->
-                    <!--<show_in_website>1</show_in_website>-->
-                    <!--<show_in_store>1</show_in_store>-->
-                <!--</info>                     -->
-			<!--</groups>-->
-        <!--</payway>-->
-        <payment>        
+        <payment>
             <groups>
                 <payway translate="label">
                     <label>WebPay</label>
@@ -37,59 +19,77 @@
                             <show_in_default>1</show_in_default>
                             <show_in_website>1</show_in_website>
                             <show_in_store>1</show_in_store>
-                        </active>						 
+                        </active>
                         <title translate="label">
-							<label>Название</label>
-							<frontend_type>text</frontend_type>
-							<sort_order>20</sort_order>
-							<show_in_default>1</show_in_default>
-							<show_in_website>1</show_in_website>
-							<show_in_store>1</show_in_store>
+                            <label>Название</label>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>20</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
                             <comment><![CDATA[Это имя будет отображено при оформлении заказа.]]></comment>
-						</title>                 
+                        </title>
                         <mode translate="label">
-							<label>Режим</label>
-							<frontend_type>select</frontend_type>
-							<source_model>payway/config_modes</source_model>
-							<sort_order>30</sort_order>
-							<show_in_default>1</show_in_default>
-							<show_in_website>1</show_in_website>
-							<show_in_store>1</show_in_store>
-						</mode>
+                            <label>Режим</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>payway/config_modes</source_model>
+                            <sort_order>30</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </mode>
                         <wsd_storeid translate="label">
                             <label>Идентификатор магазина</label>
-							<frontend_type>text</frontend_type>
-							<sort_order>31</sort_order>
-							<show_in_default>1</show_in_default>
-							<show_in_website>1</show_in_website>
-							<show_in_store>1</show_in_store>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>31</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
                             <comment><![CDATA[Идентификатор магазина в системе WebPay.]]></comment>
                         </wsd_storeid>
                         <wsd_store translate="label">
                             <label>Название магазина</label>
-							<frontend_type>text</frontend_type>
-							<sort_order>31</sort_order>
-							<show_in_default>1</show_in_default>
-							<show_in_website>1</show_in_website>
-							<show_in_store>1</show_in_store>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>31</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
                             <comment><![CDATA[Название магазина, которое будет отображаться на форме оплаты.]]></comment>
                         </wsd_store>
                         <wsb_signature translate="label">
                             <label>Контрольное значение</label>
-							<frontend_type>text</frontend_type>
-							<sort_order>32</sort_order>
-							<show_in_default>1</show_in_default>
-							<show_in_website>1</show_in_website>
-							<show_in_store>1</show_in_store>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>32</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
                             <comment><![CDATA[Поле Secret Key из настроек биллинг аккаунта.]]></comment>
                         </wsb_signature>
+                        <user_name translate="label">
+                            <label>Имя пользователя</label>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>32</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                            <comment><![CDATA[Имя пользователя для входа с систему Webpay.]]></comment>
+                        </user_name>
+                        <password translate="label">
+                            <label>Пароль</label>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>32</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                            <comment><![CDATA[Пароль для входа с систему Webpay.]]></comment>
+                        </password>
                         <wsb_currency_id translate="label">
                             <label>Валюта</label>
-							<frontend_type>text</frontend_type>
-							<sort_order>34</sort_order>
-							<show_in_default>1</show_in_default>
-							<show_in_website>1</show_in_website>
-							<show_in_store>1</show_in_store>                              
+                            <frontend_type>text</frontend_type>
+                            <sort_order>34</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
                         </wsb_currency_id>
                         <debug_flag translate="label">
                             <label>Режим отладки</label>
